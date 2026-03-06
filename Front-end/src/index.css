@@ -1,0 +1,91 @@
+/* @import url() FONT IMPORTS MUST ALWAYS BE AT THE VERY TOP OF THIS FILE, ABOVE THE TAILWIND IMPORTS — DO NOT DELETE THIS COMMENT */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+/* CRITICAL: THE FOLLOWING TAILWIND IMPORTS MUST NEVER BE DELETED OR REORDERED — DO NOT DELETE THIS COMMENT */
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+/* END TAILWIND IMPORTS — ALL OTHER CSS MUST GO BELOW THIS LINE */
+
+:root {
+  --color-background: #F8F9FA;
+  --color-background-secondary: #FFFFFF;
+  --color-surface: #FFFFFF;
+  --color-surface-elevated: #F1F3F5;
+  --color-primary: #007BFF;
+  --color-primary-light: #339DFF;
+  --color-secondary: #0A2540;
+  --color-accent: #0A2540;
+}
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #CED4DA #F1F3F5;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-track {
+  background: #F1F3F5;
+}
+*::-webkit-scrollbar-thumb {
+  background: #CED4DA;
+  border-radius: 4px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: #ADB5BD;
+}
+html {
+  scroll-behavior: smooth;
+}
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background-color: #F8F9FA;
+  color: #0A2540;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+/* Focus styles */
+*:focus-visible {
+  outline: 2px solid #007BFF;
+  outline-offset: 2px;
+}
+/* Selection styles */
+::selection {
+  background-color: rgba(0, 123, 255, 0.15);
+  color: #0A2540;
+}
+/* Subtle grid background pattern */
+.grid-pattern {
+  background-image: 
+    linear-gradient(rgba(10, 37, 64, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(10, 37, 64, 0.03) 1px, transparent 1px);
+  background-size: 50px 50px;
+}
+/* Gradient text */
+.gradient-text {
+  background: linear-gradient(135deg, #007BFF 0%, #0A2540 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+/* Shimmer loading effect */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    #F1F3F5 0%,
+    #E9ECEF 50%,
+    #F1F3F5 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
