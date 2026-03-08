@@ -1,3 +1,4 @@
+require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 
@@ -11,7 +12,7 @@ app.get("/", (req, res) => {
 });
 
 // We use 5050 to avoid Mac AirPlay conflicts
-const PORT = 5050;
+const PORT = process.env.PORT || 5050;
 
 const startServer = () => {
   try {
