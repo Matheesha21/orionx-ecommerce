@@ -1,0 +1,20 @@
+$kind: http-request
+name: http://localhost:5050/api/test
+url: '{{baseUrl}}/api/test'
+method: GET
+headers:
+  - key: Authorization
+    value: 'Bearer {{token}}'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Test endpoint is not 401', function () {
+        pm.expect(pm.response.code).to.not.eql(401);
+      });
+
+      pm.test('Response is JSON (when applicable)', function () {
+        const ct = pm.response.headers.get('Content-Type');
+        if (ct) pm.expect(ct).to.include('application/json');
+      });
+order: 3904193460990026

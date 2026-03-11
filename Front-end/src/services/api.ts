@@ -31,10 +31,10 @@ import {
 
 // ─── Configuration ───────────────────────────────────────────
 // Change this to your backend URL when ready
-export const API_BASE_URL = 'http://localhost:5050/api';
+export const API_BASE_URL = '/api';
 
 // Set to false when your backend is running
-export const USE_MOCK_DATA = true;
+export const USE_MOCK_DATA = false;
 
 // ─── Token Management ────────────────────────────────────────
 const TOKEN_KEY = 'orionx-token';

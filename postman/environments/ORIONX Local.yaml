@@ -1,0 +1,10 @@
+name: ORIONX Local
+values:
+  - key: baseUrl
+    value: 'http://localhost:5050'
+    enabled: true
+    type: default
+  - key: token
+    value: ''
+    enabled: true
+    type: default

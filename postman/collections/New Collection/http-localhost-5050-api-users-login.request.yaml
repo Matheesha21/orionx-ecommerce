@@ -1,0 +1,38 @@
+$kind: http-request
+name: http://localhost:5050/api/users/login
+url: '{{baseUrl}}/api/users/login'
+method: POST
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "email": "matheesha@email.com",
+      "password": "mypassword"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Login returns 2xx', function () {
+        pm.expect(pm.response.code).to.be.within(200, 299);
+      });
+
+      pm.test('Login returns JSON', function () {
+        pm.response.to.have.header('Content-Type');
+        pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');
+      });
+
+      const json = pm.response.json();
+      const token = json.token || json.jwt || json.accessToken;
+
+      pm.test('Token present in login response', function () {
+        pm.expect(token, 'token').to.be.a('string').and.not.be.empty;
+      });
+
+      if (token) {
+        pm.environment.set('token', token);
+      }
+order: 1757513936604503
