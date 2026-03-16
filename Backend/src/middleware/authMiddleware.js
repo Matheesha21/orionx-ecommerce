@@ -1,28 +1,36 @@
 const jwt = require("jsonwebtoken");
+const User = require("../models/User");
 
-const protect = (req, res, next) => {
+const protect = async (req, res, next) => {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res.status(401).json({ message: "No token provided" });
+  }
+
   try {
-    const authHeader = req.headers.authorization;
-
-    console.log("Authorization header:", authHeader);
-
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return res.status(401).json({ message: "No token provided" });
-    }
-
     const token = authHeader.split(" ")[1];
-
-    console.log("Extracted token:", token);
-
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    req.user = decoded;
+    const user = await User.findById(decoded.id).select("-password");
 
+    if (!user) {
+      return res.status(401).json({ message: "User not found" });
+    }
+
+    req.user = user;
     next();
   } catch (error) {
-    console.error("JWT ERROR:", error);
     res.status(401).json({ message: "Token not valid" });
   }
 };
 
-module.exports = protect;
+const adminOnly = (req, res, next) => {
+  if (req.user && req.user.isAdmin === true) {
+    next();
+  } else {
+    res.status(403).json({ message: "Admin access only" });
+  }
+};
+
+module.exports = { protect, adminOnly };

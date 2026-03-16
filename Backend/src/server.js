@@ -5,7 +5,7 @@ const cors = require("cors");
 const connectDB = require("./config/db");
 const UserRoutes = require("./routes/userRoutes");
 const ProductRoutes = require("./routes/productRoutes");
-const protect = require("./middleware/authMiddleware");
+const { protect } = require("./middleware/authMiddleware");
 
 const app = express();
 
