@@ -2,6 +2,7 @@ require("dotenv").config();
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
+const mongoose = require("mongoose");
 const connectDB = require("./config/db");
 const UserRoutes = require("./routes/userRoutes");
 const ProductRoutes = require("./routes/productRoutes");
@@ -24,6 +25,16 @@ app.get("/", (req, res) => {
 
 app.get("/api/test", protect, (req, res) => {
   res.json({ message: "Protected route works!" });
+});
+
+app.get("/api/health", (req, res) => {
+  const dbStatus = mongoose.connection.readyState === 1 ? "connected" : "disconnected";
+  res.json({
+    status: "ok",
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    database: dbStatus
+  });
 });
 
 // We use 5050 to avoid Mac AirPlay conflicts
