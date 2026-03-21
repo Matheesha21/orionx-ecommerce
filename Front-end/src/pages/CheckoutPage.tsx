@@ -116,7 +116,7 @@ export function CheckoutPage() {
       }
 
       const orderItems = items.map((item) => ({
-        product: item.product._id || item.product.id,
+        product: item.product.id,
         name: item.product.name,
         image: item.product.images?.[0] || "",
         price: item.product.price,
@@ -515,7 +515,7 @@ export function CheckoutPage() {
 
                   <div className="space-y-4">
                     {items.map((item) => (
-                      <div key={item.product._id || item.product.id} className="flex items-center gap-4">
+                      <div key={item.product.id} className="flex items-center gap-4">
                         <img
                           src={item.product.images[0]}
                           alt={item.product.name}
