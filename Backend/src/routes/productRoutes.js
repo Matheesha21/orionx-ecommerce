@@ -6,19 +6,19 @@ const { protect, adminOnly } = require("../middleware/authMiddleware");
 // GET ALL PRODUCTS
 router.get("/", async (req, res) => {
   try {
-    const products = await Product.find();
+    const products = await Product.find({}).sort({ createdAt: -1 });
 
-    res.status(200).json({
+    res.json({
       data: products,
       total: products.length,
       page: 1,
       limit: products.length,
-      totalPages: 1
+      totalPages: 1,
     });
   } catch (error) {
+    console.error("GET PRODUCTS ERROR:", error);
     res.status(500).json({
-      message: "Failed to fetch products",
-      error: error.message
+      message: error.message || "Server error",
     });
   }
 });

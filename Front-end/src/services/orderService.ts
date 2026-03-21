@@ -50,6 +50,8 @@ export const ordersApi = {
     return response.data;
   },
 
+  
+
   getById: async (orderId: string, token: string) => {
     const response = await axios.get(`${API_BASE_URL}/orders/${orderId}`, {
       headers: {
@@ -59,4 +61,44 @@ export const ordersApi = {
 
     return response.data;
   },
+
+    getAllOrders: async (token: string) => {
+    const response = await axios.get(`${API_BASE_URL}/orders`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    return response.data;
+  },
+
+  markAsPaid: async (orderId: string, token: string) => {
+  const response = await axios.put(
+    `${API_BASE_URL}/orders/${orderId}/pay`,
+    {},
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  return response.data;
+},
+
+markAsDelivered: async (orderId: string, token: string) => {
+  const response = await axios.put(
+    `${API_BASE_URL}/orders/${orderId}/deliver`,
+    {},
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  return response.data;
+},
+
+  
 };
