@@ -67,7 +67,6 @@ export function CheckoutPage() {
 
   const { items, subtotal, discount, tax, shipping, total, clearCart } = useCart();
   const { isAuthenticated } = useAuth();
-  const navigate = useNavigate();
 
   if (!isAuthenticated) {
     return (
