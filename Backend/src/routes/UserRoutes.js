@@ -28,6 +28,7 @@ router.post("/register", async (req, res) => {
 });
 
 
+
 // LOGIN USER
 router.post("/login", async (req, res) => {
   try {
@@ -61,5 +62,8 @@ router.post("/login", async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
+
+// create a API to take images by the user
 
 module.exports = router;

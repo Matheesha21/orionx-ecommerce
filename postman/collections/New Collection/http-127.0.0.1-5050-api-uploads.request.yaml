@@ -3,8 +3,7 @@ name: http://127.0.0.1:5050/api/uploads
 url: http://127.0.0.1:5050/api/uploads
 method: POST
 headers:
-  Authorization: Bearer
-    eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5YWQ5NzBiNDkzOTA1NzVlY2U5NDliOSIsImlhdCI6MTc3MzY2NTM4NywiZXhwIjoxNzc0MjcwMTg3fQ.kFUYby6MuCRt8O2EvG6xwSAkocWbv91Wi_f4NMf2_DU
+  Authorization: "Bearer "
 body:
   type: formdata
   content:

@@ -8,6 +8,7 @@ const UserRoutes = require("./routes/userRoutes");
 const ProductRoutes = require("./routes/productRoutes");
 const { protect } = require("./middleware/authMiddleware");
 const uploadRoutes = require("./routes/uploadRoutes");
+const orderRoutes = require("./routes/orderRoutes");
 
 const app = express();
 
@@ -16,6 +17,7 @@ app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use("/api/products", ProductRoutes);
 app.use("/api/users", UserRoutes);
 app.use("/api/uploads", uploadRoutes);
+app.use("/api/orders", orderRoutes);
 
 connectDB();
 
@@ -23,11 +25,8 @@ app.get("/", (req, res) => {
   res.send("ORIONX API is officially running!");
 });
 
-app.get("/api/test", protect, (req, res) => {
-  res.json({ message: "Protected route works!" });
-});
-
 app.get("/api/health", (req, res) => {
+  console.log("Health check endpoint hit");
   const dbStatus = mongoose.connection.readyState === 1 ? "connected" : "disconnected";
   res.json({
     status: "ok",
