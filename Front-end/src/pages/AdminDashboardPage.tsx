@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Navigate } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import {
   UsersIcon,
   PackageIcon,
@@ -32,34 +32,33 @@ export function AdminDashboardPage() {
   const [loadingOrders, setLoadingOrders] = useState(true);
   const [ordersError, setOrdersError] = useState("");
 
-  // 👇 ADD HERE
-const handleMarkPaid = async (orderId: string) => {
-  try {
-    const token = localStorage.getItem("token");
-    if (!token) return;
+  const handleMarkPaid = async (orderId: string) => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
 
-    await ordersApi.markAsPaid(orderId, token);
+      await ordersApi.markAsPaid(orderId, token);
 
-    const updated = await ordersApi.getAllOrders(token);
-    setOrders(updated);
-  } catch (error) {
-    console.error("Mark paid failed:", error);
-  }
-};
+      const updated = await ordersApi.getAllOrders(token);
+      setOrders(updated);
+    } catch (error) {
+      console.error("Mark paid failed:", error);
+    }
+  };
 
-const handleMarkDelivered = async (orderId: string) => {
-  try {
-    const token = localStorage.getItem("token");
-    if (!token) return;
+  const handleMarkDelivered = async (orderId: string) => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
 
-    await ordersApi.markAsDelivered(orderId, token);
+      await ordersApi.markAsDelivered(orderId, token);
 
-    const updated = await ordersApi.getAllOrders(token);
-    setOrders(updated);
-  } catch (error) {
-    console.error("Mark delivered failed:", error);
-  }
-};
+      const updated = await ordersApi.getAllOrders(token);
+      setOrders(updated);
+    } catch (error) {
+      console.error("Mark delivered failed:", error);
+    }
+  };
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -143,9 +142,25 @@ const handleMarkDelivered = async (orderId: string) => {
           <h1 className="text-3xl font-bold text-text-primary">
             Admin Dashboard
           </h1>
-          <button className="px-4 py-2 bg-primary hover:bg-primary-light text-white font-semibold rounded-lg transition-colors">
-            Generate Report
-          </button>
+
+          <div className="flex gap-3">
+            <Link
+              to="/admin/products/new"
+              className="px-4 py-2 bg-primary hover:bg-primary-light text-white font-semibold rounded-lg transition-colors"
+            >
+              Add Product
+            </Link>
+            <Link
+              to="/admin/products"
+              className="px-4 py-2 bg-surface border border-border hover:bg-surface-elevated text-text-primary font-semibold rounded-lg transition-colors"
+            >
+              Manage Products
+            </Link>
+
+            <button className="px-4 py-2 bg-surface border border-border hover:bg-surface-elevated text-text-primary font-semibold rounded-lg transition-colors">
+              Generate Report
+            </button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -249,15 +264,16 @@ const handleMarkDelivered = async (orderId: string) => {
                               onClick={() => handleMarkPaid(order._id)}
                               className="px-2 py-1 text-xs bg-blue-500/10 text-blue-400 rounded"
                             >
-                              pay
+                              Pay
                             </button>
                           )}
-                          {order.isDelivered && (
+
+                          {!order.isDelivered && (
                             <button
                               onClick={() => handleMarkDelivered(order._id)}
                               className="px-2 py-1 text-xs bg-green-500/10 text-green-400 rounded"
                             >
-                              deliver
+                              Deliver
                             </button>
                           )}
                         </td>

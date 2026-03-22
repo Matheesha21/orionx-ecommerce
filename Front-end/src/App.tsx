@@ -20,6 +20,9 @@ import { AdminDashboardPage } from './pages/AdminDashboardPage';
 import { AboutPage } from './pages/AboutPage';
 import { ContactPage } from './pages/ContactPage';
 import { QuotationPage } from './pages/QuotationPage';
+import { AdminAddProductPage } from "./pages/AdminAddProductPage";
+import { AdminProductsPage } from "./pages/AdminProductsPage";
+import { AdminEditProductPage } from "./pages/AdminEditProductPage";
 export function App() {
   return (
     <AuthProvider>
@@ -46,6 +49,9 @@ export function App() {
                   <Route path="/about" element={<AboutPage />} />
                   <Route path="/contact" element={<ContactPage />} />
                   <Route path="/quote" element={<QuotationPage />} />
+                  <Route path="/admin/products/new" element={<AdminAddProductPage />} />
+                  <Route path="/admin/products" element={<AdminProductsPage />} />
+                  <Route path="/admin/products/:id/edit" element={<AdminEditProductPage />} />
                 </Routes>
               </Layout>
             </Router>
