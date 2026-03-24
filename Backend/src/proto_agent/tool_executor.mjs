@@ -1,4 +1,4 @@
-import { searchProductsTool } from "./tools/product/index.mjs";
+import { searchProductsTool } from "./tools/product/search_product.mjs";
 import { initializeVectorStore } from "./vector_store/embedding_pipelines.mjs";
 
 export const executeTool = async (tool, args) => {
