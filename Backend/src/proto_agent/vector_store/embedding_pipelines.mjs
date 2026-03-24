@@ -15,10 +15,9 @@ const initializeVectorStore = async () => {
     // ✅ Convert to text (IMPORTANT)
     const product_data = `
       Name: ${product.name}
+      Description: ${product.description}
       Category: ${product.category}
       Subcategory: ${product.subcategory}
-      Price: ${product.price}
-      Stock: ${product.stock}
     `;
 
     try {
@@ -37,7 +36,9 @@ const initializeVectorStore = async () => {
         id: product.id,
         embedding,
         meta_data: {
+          id: product.id,
           name: product.name,
+          description: product.description,
           category: product.category,
           subcategory: product.subcategory,
           price: product.price,
