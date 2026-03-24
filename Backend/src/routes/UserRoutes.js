@@ -1,7 +1,7 @@
-const express = require("express");
+import express from "express";
 const router = express.Router();
-const { protect } = require("../middleware/authMiddleware");
-const {
+import { protect } from "../middleware/authMiddleware.js"; // Added .js
+import {
   registerUser,
   loginUser,
   addToCart,
@@ -11,7 +11,7 @@ const {
   addToWishlist,
   getWishlist,
   removeFromWishlist,
-} = require("../controllers/userController");
+} from "../controllers/userController.js"; // Added .js
 
 // Public Routes
 router.post("/register", registerUser);
@@ -28,4 +28,4 @@ router.post("/wishlist", protect, addToWishlist);
 router.get("/wishlist", protect, getWishlist);
 router.delete("/wishlist/:productId", protect, removeFromWishlist);
 
-module.exports = router;
+export default router;

@@ -1,25 +1,21 @@
-const jwt = require("jsonwebtoken");
-const bcrypt = require("bcryptjs");
-const User = require("../models/User");
+import jwt from "jsonwebtoken";
+import bcrypt from "bcryptjs";
+import User from "../models/User.js";
 
 // @desc    Register user
-// @route   POST /api/users/register
-exports.registerUser = async (req, res) => {
+export const registerUser = async (req, res) => {
   try {
     const { username, email, password } = req.body;
 
     const userExists = await User.findOne({ email });
-
     if (userExists) {
       return res.status(400).json({ message: "User already exists" });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-
     const user = await User.create({
       username,
       email,
-      password: hashedPassword,
+      password,
     });
 
     res.status(201).json({
@@ -37,11 +33,9 @@ exports.registerUser = async (req, res) => {
 };
 
 // @desc    Login user
-// @route   POST /api/users/login
-exports.loginUser = async (req, res) => {
+export const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
-
     const user = await User.findOne({ email });
 
     if (!user) {
@@ -73,12 +67,10 @@ exports.loginUser = async (req, res) => {
   }
 };
 
-// @desc    Add item to cart
-// @route   POST /api/users/cart
-exports.addToCart = async (req, res) => {
+// Cart
+export const addToCart = async (req, res) => {
   try {
     const { productId, qty } = req.body;
-
     const user = await User.findById(req.user._id);
 
     if (!user) {
@@ -92,14 +84,10 @@ exports.addToCart = async (req, res) => {
     if (itemIndex > -1) {
       user.cart[itemIndex].quantity += qty || 1;
     } else {
-      user.cart.push({
-        product: productId,
-        quantity: qty || 1,
-      });
+      user.cart.push({ product: productId, quantity: qty || 1 });
     }
 
     await user.save();
-
     const populatedUser = await User.findById(req.user._id).populate("cart.product");
 
     res.status(200).json({
@@ -111,9 +99,7 @@ exports.addToCart = async (req, res) => {
   }
 };
 
-// @desc    Get logged-in user's cart
-// @route   GET /api/users/cart
-exports.getCart = async (req, res) => {
+export const getCart = async (req, res) => {
   try {
     const user = await User.findById(req.user._id).populate("cart.product");
 
@@ -121,20 +107,15 @@ exports.getCart = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    res.status(200).json({
-      cart: user.cart,
-    });
+    res.status(200).json({ cart: user.cart });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-// @desc    Update cart item quantity
-// @route   PUT /api/users/cart
-exports.updateCartItem = async (req, res) => {
+export const updateCartItem = async (req, res) => {
   try {
     const { productId, qty } = req.body;
-
     const user = await User.findById(req.user._id);
 
     if (!user) {
@@ -146,7 +127,7 @@ exports.updateCartItem = async (req, res) => {
     );
 
     if (itemIndex === -1) {
-      return res.status(404).json({ message: "Cart item not found" });
+      return res.status(404).json({ message: "Item not in cart" });
     }
 
     if (qty <= 0) {
@@ -156,24 +137,17 @@ exports.updateCartItem = async (req, res) => {
     }
 
     await user.save();
-
     const populatedUser = await User.findById(req.user._id).populate("cart.product");
 
-    res.status(200).json({
-      message: "Cart item updated",
-      cart: populatedUser.cart,
-    });
+    res.status(200).json({ cart: populatedUser.cart });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-// @desc    Remove item from cart
-// @route   DELETE /api/users/cart/:productId
-exports.removeFromCart = async (req, res) => {
+export const removeFromCart = async (req, res) => {
   try {
     const { productId } = req.params;
-
     const user = await User.findById(req.user._id);
 
     if (!user) {
@@ -185,24 +159,18 @@ exports.removeFromCart = async (req, res) => {
     );
 
     await user.save();
-
     const populatedUser = await User.findById(req.user._id).populate("cart.product");
 
-    res.status(200).json({
-      message: "Item removed from cart",
-      cart: populatedUser.cart,
-    });
+    res.status(200).json({ cart: populatedUser.cart });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-// @desc    Add item to wishlist
-// @route   POST /api/users/wishlist
-exports.addToWishlist = async (req, res) => {
+// Wishlist
+export const addToWishlist = async (req, res) => {
   try {
     const { productId } = req.body;
-
     const user = await User.findById(req.user._id);
 
     if (!user) {
@@ -214,7 +182,7 @@ exports.addToWishlist = async (req, res) => {
     );
 
     if (alreadyExists) {
-      return res.status(400).json({ message: "Item already in wishlist" });
+      return res.status(400).json({ message: "Already in wishlist" });
     }
 
     user.wishlist.push(productId);
@@ -231,9 +199,7 @@ exports.addToWishlist = async (req, res) => {
   }
 };
 
-// @desc    Get wishlist
-// @route   GET /api/users/wishlist
-exports.getWishlist = async (req, res) => {
+export const getWishlist = async (req, res) => {
   try {
     const user = await User.findById(req.user._id).populate("wishlist");
 
@@ -241,20 +207,15 @@ exports.getWishlist = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    res.status(200).json({
-      wishlist: user.wishlist,
-    });
+    res.status(200).json({ wishlist: user.wishlist });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-// @desc    Remove item from wishlist
-// @route   DELETE /api/users/wishlist/:productId
-exports.removeFromWishlist = async (req, res) => {
+export const removeFromWishlist = async (req, res) => {
   try {
     const { productId } = req.params;
-
     const user = await User.findById(req.user._id);
 
     if (!user) {
@@ -262,7 +223,7 @@ exports.removeFromWishlist = async (req, res) => {
     }
 
     user.wishlist = user.wishlist.filter(
-      (item) => item.toString() !== productId
+      (id) => id.toString() !== productId
     );
 
     await user.save();

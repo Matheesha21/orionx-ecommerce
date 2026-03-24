@@ -1,16 +1,16 @@
-require("dotenv").config();
-const express = require("express");
-const cors = require("cors");
-const mongoose = require("mongoose");
-const connectDB = require("./config/db");
+import "dotenv/config"; // Replaces require("dotenv").config()
+import express from "express";
+import cors from "cors";
+import mongoose from "mongoose";
+import connectDB from "./config/db.js"; // Added .js extension
 
-// Route Imports
-const userRoutes = require("./routes/UserRoutes");
-const productRoutes = require("./routes/productRoutes");
-const uploadRoutes = require("./routes/uploadRoutes");
-const orderRoutes = require("./routes/orderRoutes");
-const infoRoutes = require("./routes/infoRoutes"); 
-const chatbotRoutes = require("./routes/chatbotRoutes");// New route for Chatbot/Business info
+// Route Imports - All local imports MUST have .js
+import userRoutes from "./routes/UserRoutes.js";
+import productRoutes from "./routes/productRoutes.js";
+import uploadRoutes from "./routes/uploadRoutes.js";
+import orderRoutes from "./routes/orderRoutes.js";
+import infoRoutes from "./routes/infoRoutes.js"; 
+import chatbotRoutes from "./routes/chatbotRoutes.js";
 
 const app = express();
 
@@ -30,7 +30,7 @@ app.use("/api/products", productRoutes);
 app.use("/api/uploads", uploadRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/info", infoRoutes);
-app.use("/api/chatbot", chatbotRoutes); // Endpoint for unstructured chatbot data
+app.use("/api/chatbot", chatbotRoutes);
 
 // Initialize Database
 connectDB();
@@ -39,7 +39,7 @@ app.get("/", (req, res) => {
   res.send("ORIONX API is officially running!");
 });
 
-// Health Check - useful for your M4 MacBook dev environment
+// Health Check
 app.get("/api/health", (req, res) => {
   const dbStatus = mongoose.connection.readyState === 1 ? "connected" : "disconnected";
   res.json({
@@ -50,7 +50,6 @@ app.get("/api/health", (req, res) => {
   });
 });
 
-// Port 5050 to avoid macOS AirPlay Receiver conflicts
 const PORT = process.env.PORT || 5050;
 
 const startServer = () => {

@@ -1,8 +1,9 @@
-const express = require("express");
+import express from "express";
+import { getChatbotProducts, getBusinessInfo } from "../controllers/chatbotController.js";
+
 const router = express.Router();
-const { getChatbotProducts, getBusinessInfo } = require("../controllers/chatbotController");
 
 router.get("/products", getChatbotProducts);
 router.get("/info", getBusinessInfo);
 
-module.exports = router;
+export default router;
