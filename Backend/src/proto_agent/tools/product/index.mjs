@@ -1,5 +1,6 @@
 import { VECTOR_DATABASE } from "../../vector_store/embedding_pipelines.mjs";
 import { cosineSimilaritySearch } from "../../utils/similarity.mjs";
+import { embedding_model } from "../../vector_store/model.mjs";
 
 export const searchProductsTool = {
   name: "search_products",

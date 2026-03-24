@@ -3,7 +3,7 @@ import { embedding_model } from "./model.mjs";
 
 export let VECTOR_DATABASE = {};
 
-const initializeVectorStore = async () => {
+export const initializeVectorStore = async () => {
   for (let product of products) {
 
     // ✅ Validate product
@@ -52,9 +52,4 @@ const initializeVectorStore = async () => {
       console.error("Embedding failed for:", product.name, err);
     }
   }
-
-  console.info("Vector store initialized");
-  console.info("Sample vector entry:", VECTOR_DATABASE[products[0].id]);
 };
-
-initializeVectorStore();
