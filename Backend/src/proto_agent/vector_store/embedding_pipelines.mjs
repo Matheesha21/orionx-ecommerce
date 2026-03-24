@@ -2,8 +2,13 @@ import { products } from "./data/products.mjs";
 import { embedding_model } from "./model.mjs";
 
 export let VECTOR_DATABASE = {};
+let initialized = false;
 
 export const initializeVectorStore = async () => {
+  if (initialized) {
+    return;
+  }
+  initialized = true;
   for (let product of products) {
 
     // ✅ Validate product
