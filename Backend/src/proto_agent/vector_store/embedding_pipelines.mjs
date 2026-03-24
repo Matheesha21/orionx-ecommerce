@@ -1,7 +1,7 @@
 import { products } from "./data/products.mjs";
 import { embedding_model } from "./model.mjs";
 
-export let VECTOR_DATABASE = [];
+export let VECTOR_DATABASE = {};
 
 const initializeVectorStore = async () => {
   for (let product of products) {
@@ -14,7 +14,7 @@ const initializeVectorStore = async () => {
 
     // ✅ Convert to text (IMPORTANT)
     const product_data = `
-      ${product.name}
+      Name: ${product.name}
       Category: ${product.category}
       Subcategory: ${product.subcategory}
       Price: ${product.price}
@@ -45,7 +45,7 @@ const initializeVectorStore = async () => {
         }
       };
 
-      VECTOR_DATABASE.push(product_object);
+      VECTOR_DATABASE[product.id] = product_object;
 
     } catch (err) {
       console.error("Embedding failed for:", product.name, err);
@@ -53,6 +53,7 @@ const initializeVectorStore = async () => {
   }
 
   console.info("Vector store initialized");
+  console.info("Sample vector entry:", VECTOR_DATABASE[products[0].id]);
 };
 
 initializeVectorStore();
