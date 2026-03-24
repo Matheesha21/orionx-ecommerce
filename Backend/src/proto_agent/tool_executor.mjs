@@ -10,16 +10,3 @@ export const executeTool = async (tool, args) => {
     throw error;
   }
 }
-
-// const test = () => {
-//   initializeVectorStore().then(async () => {
-//     console.log("Vector store initialized, executing tool...");
-//     const result_ = await executeTool(searchProductsTool, { query: "any watches?", maxPrice: 1000 })
-//     console.log("tool executor results: ", result_);
-//   }
-//   ).catch(err => {
-//     console.error("Error initializing vector store:", err);
-//   });
-// }
-
-// test();

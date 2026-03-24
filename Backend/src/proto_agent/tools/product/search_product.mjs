@@ -4,22 +4,11 @@ import { embedding_model } from "../../vector_store/model.mjs";
 
 export const searchProductsTool = {
   name: "search_products",
-  prompt: `
-    This function to search for products based on query, name, category and price range.
+  description: `
+    Search for products based on user query and optional price filter
     Arguements:
-    - query (required): General search intent expressed in natural language.
-    - maxPrice (optional): Maximum price for the product.
-    Valid input types:
-    - query: string
-    - maxPrice: number (optional)
-    OUTPUT FORMAT:
-    {
-      "query": "string",
-      "maxPrice": number (optional)
-    }
-    Rules:
-    - query is a required and maxPrice is optional.
-    - Always return arguments as valid JSON mentioned in the OUTPUT FORMAT.
+    - query (string, required): General search intent expressed in natural language.
+    - maxPrice (number, optional): Maximum price for the product.
   `,
   func: async ({ query, maxPrice }) => {
     // 1. Validate input
