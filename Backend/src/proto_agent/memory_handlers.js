@@ -1,4 +1,4 @@
-import { tools } from "./tools/index.mjs";
+import { tools } from "./tools/index.js";
 
 const SYSTEM_PROMPT = `
     You are an AI assistant for ORIONX (PVT) LTD, a Sri Lanka-based technology solutions provider specializing in computers, 

@@ -1,5 +1,5 @@
-import { products } from "./data/products.mjs";
-import { embedding_model } from "./model.mjs";
+import { products } from "./data/products.js";
+import { embedding_model } from "./model.js";
 
 export let VECTOR_DATABASE = {};
 let initialized = false;
