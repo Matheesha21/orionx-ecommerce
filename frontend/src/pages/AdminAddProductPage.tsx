@@ -37,11 +37,12 @@ export function AdminAddProductPage() {
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
-    const { name, value, type } = e.target as HTMLInputElement;
+    const target = e.target as HTMLInputElement;
+    const { name, value, type, checked } = target;
 
     setFormData((prev) => ({
       ...prev,
-      [name]: type === "checkbox" ? (e.target as HTMLInputElement).checked : value,
+      [name]: type === "checkbox" ? checked : value,
     }));
   };
 
@@ -92,18 +93,32 @@ export function AdminAddProductPage() {
         return;
       }
 
+      if (
+        !formData.name.trim() ||
+        !formData.slug.trim() ||
+        !formData.category.trim() ||
+        !formData.brand.trim() ||
+        !formData.price ||
+        !formData.description.trim() ||
+        !formData.shortDescription.trim() ||
+        !formData.stockCount
+      ) {
+        setError("Please fill all required fields, including short description");
+        return;
+      }
+
       setCreatingProduct(true);
 
       const productData = {
-        name: formData.name,
-        slug: formData.slug,
-        category: formData.category,
-        subcategory: formData.subcategory,
-        brand: formData.brand,
+        name: formData.name.trim(),
+        slug: formData.slug.trim().toLowerCase(),
+        category: formData.category.trim(),
+        subcategory: formData.subcategory.trim(),
+        brand: formData.brand.trim(),
         price: Number(formData.price),
         originalPrice: Number(formData.originalPrice || 0),
-        description: formData.description,
-        shortDescription: formData.shortDescription,
+        description: formData.description.trim(),
+        shortDescription: formData.shortDescription.trim(),
         specs: {},
         images: [uploadedImageUrl],
         stockCount: Number(formData.stockCount),
@@ -116,7 +131,11 @@ export function AdminAddProductPage() {
           .filter(Boolean),
       };
 
-      await productsApi.create(productData, token);
+      console.log("SENDING PRODUCT DATA:", productData);
+
+      const result = await productsApi.create(productData, token);
+
+      console.log("CREATE PRODUCT RESPONSE:", result);
 
       setMessage("Product created successfully");
       setFormData({
@@ -139,7 +158,11 @@ export function AdminAddProductPage() {
       setUploadedImageUrl("");
     } catch (error: any) {
       console.error("Create product failed:", error.response?.data || error.message);
-      setError(error.response?.data?.message || "Failed to create product");
+      setError(
+        error.response?.data?.message ||
+          error.response?.data?.error ||
+          "Failed to create product"
+      );
     } finally {
       setCreatingProduct(false);
     }
@@ -261,6 +284,7 @@ export function AdminAddProductPage() {
             onChange={handleChange}
             className="w-full rounded-lg border border-border bg-background px-4 py-3 text-text-primary"
             rows={2}
+            required
           />
 
           <textarea

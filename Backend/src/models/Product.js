@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const productSchema = new mongoose.Schema(
   {
@@ -91,4 +91,6 @@ const productSchema = new mongoose.Schema(
   }
 );
 
-module.exports = mongoose.model("Product", productSchema);
+// In ESM, we use 'export default' instead of 'module.exports'
+const Product = mongoose.model("Product", productSchema);
+export default Product;

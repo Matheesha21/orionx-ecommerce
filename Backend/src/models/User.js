@@ -1,18 +1,134 @@
-const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
+import mongoose from "mongoose";
 
-const UserSchema = new mongoose.Schema({
-    username: { type: String, required: true, unique: true },
-    email: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
-    isAdmin: { type: Boolean, default: false },
-}, { timestamps: true });
+const orderItemSchema = new mongoose.Schema(
+  {
+    product: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Product",
+      required: true,
+    },
+    name: {
+      type: String,
+      required: true,
+    },
+    image: {
+      type: String,
+      required: true,
+    },
+    price: {
+      type: Number,
+      required: true,
+    },
+    qty: {
+      type: Number,
+      required: true,
+      min: 1,
+    },
+  },
+  { _id: false }
+);
 
-// This code runs ENTIRELY automatically before saving a user
-UserSchema.pre('save', async function() {
-    if (!this.isModified('password')) return;
-    const salt = await bcrypt.genSalt(10);
-    this.password = await bcrypt.hash(this.password, salt);
-});
+const shippingAddressSchema = new mongoose.Schema(
+  {
+    fullName: {
+      type: String,
+      required: true,
+    },
+    phone: {
+      type: String,
+      required: true,
+    },
+    address: {
+      type: String,
+      required: true,
+    },
+    city: {
+      type: String,
+      required: true,
+    },
+    postalCode: {
+      type: String,
+      default: "",
+    },
+    country: {
+      type: String,
+      required: true,
+    },
+  },
+  { _id: false }
+);
 
-module.exports = mongoose.model('User', UserSchema);
+const orderSchema = new mongoose.Schema(
+  {
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    orderItems: {
+      type: [orderItemSchema],
+      required: true,
+      validate: {
+        validator: function (value) {
+          return value.length > 0;
+        },
+        message: "Order must have at least one item",
+      },
+    },
+    shippingAddress: {
+      type: shippingAddressSchema,
+      required: true,
+    },
+    paymentMethod: {
+      type: String,
+      required: true,
+      default: "Cash on Delivery",
+    },
+    itemsPrice: {
+      type: Number,
+      required: true,
+      default: 0,
+    },
+    shippingPrice: {
+      type: Number,
+      required: true,
+      default: 0,
+    },
+    taxPrice: {
+      type: Number,
+      required: true,
+      default: 0,
+    },
+    totalPrice: {
+      type: Number,
+      required: true,
+      default: 0,
+    },
+    isPaid: {
+      type: Boolean,
+      required: true,
+      default: false,
+    },
+    paidAt: {
+      type: Date,
+    },
+    isDelivered: {
+      type: Boolean,
+      required: true,
+      default: false,
+    },
+    deliveredAt: {
+      type: Date,
+    },
+    orderStatus: {
+      type: String,
+      default: "Processing",
+    },
+  },
+  { timestamps: true }
+);
+
+// Remove module.exports = mongoose.model("Order", orderSchema);
+
+const Order = mongoose.model("Order", orderSchema);
+export default Order;

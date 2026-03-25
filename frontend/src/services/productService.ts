@@ -22,8 +22,10 @@ export interface CreateProductPayload {
 }
 
 export const productsApi = {
-  getAll: async () => {
-    const response = await axios.get(`${API_BASE_URL}/products`);
+  getAll: async (params?: any) => {
+    const response = await axios.get(`${API_BASE_URL}/products`, {
+      params,
+    });
     return response.data;
   },
 
