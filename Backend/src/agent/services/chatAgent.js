@@ -19,7 +19,7 @@ export const streamChat = async (
   userMessage,
   { mode = "faster", onToken, onProgress } = {}
 ) => {
-  onProgress?.("initializing");
+  onProgress?.("👋 Getting things ready...");
 
   const model = getModel(mode, true);
 
@@ -28,7 +28,7 @@ export const streamChat = async (
     new HumanMessage(userMessage),
   ];
 
-  onProgress?.("generating");
+  onProgress?.("💬 Understanding your request...");
 
   // ✅ Inject streaming callback
   model.callbacks = [
@@ -39,9 +39,9 @@ export const streamChat = async (
     },
   ];
 
-  onProgress?.("streaming");
+  onProgress?.("✍️ Preparing a response...");
 
-  await model.invoke(messages); // 🔥 THIS triggers streaming properly
+  await model.invoke(messages); 
 
   onProgress?.("done");
 };
