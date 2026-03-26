@@ -11,7 +11,7 @@ export function AdminAddProductPage() {
     slug: "",
     category: "",
     subcategory: "",
-    brand: "ORIONX",
+    brand: "",
     price: "",
     originalPrice: "",
     description: "",

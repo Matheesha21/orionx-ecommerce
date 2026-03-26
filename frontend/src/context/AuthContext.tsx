@@ -1,78 +1,43 @@
-import React, { useEffect, useState, createContext, useContext } from 'react';
-import { User } from '../types';
+import React, { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import axios from "axios";
+import { User } from "../types";
+
+interface AuthUser extends User {
+  isAdmin?: boolean;
+}
+
 interface AuthContextType {
-  user: User | null;
+  user: AuthUser | null;
   isAuthenticated: boolean;
   isAdmin: boolean;
   login: (
-  email: string,
-  password: string)
-  => Promise<{
+    email: string,
+    password: string
+  ) => Promise<{
     success: boolean;
     message: string;
   }>;
   register: (
-  name: string,
-  email: string,
-  password: string)
-  => Promise<{
+    name: string,
+    email: string,
+    password: string
+  ) => Promise<{
     success: boolean;
     message: string;
   }>;
   logout: () => void;
-  updateUser: (updates: Partial<User>) => void;
+  updateUser: (updates: Partial<AuthUser>) => void;
 }
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-const AUTH_STORAGE_KEY = 'orionx-auth';
-// Mock users for demo
-const mockUsers: {
-  email: string;
-  password: string;
-  user: User;
-}[] = [
-{
-  email: 'admin@orionx.com',
-  password: 'admin123',
-  user: {
-    id: 'admin-1',
-    name: 'Admin User',
-    email: 'admin@orionx.com',
-    role: 'admin',
-    avatar:
-    'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100',
-    addresses: [],
-    createdAt: '2024-01-01T00:00:00Z'
-  }
-},
-{
-  email: 'demo@orionx.com',
-  password: 'demo123',
-  user: {
-    id: 'user-1',
-    name: 'Demo User',
-    email: 'demo@orionx.com',
-    role: 'customer',
-    avatar:
-    'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100',
-    addresses: [
-    {
-      id: 'addr-1',
-      name: 'Home',
-      street: '123 Tech Street',
-      city: 'San Francisco',
-      state: 'CA',
-      zipCode: '94102',
-      phone: '(555) 123-4567',
-      isDefault: true
-    }],
 
-    createdAt: '2024-01-15T00:00:00Z'
-  }
-}];
+const AUTH_STORAGE_KEY = "orionx-auth";
+const TOKEN_STORAGE_KEY = "token";
+const API_BASE_URL = "http://127.0.0.1:5050/api";
 
-export function AuthProvider({ children }: {children: ReactNode;}) {
-  const [user, setUser] = useState<User | null>(null);
-  // Load user from localStorage on mount
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<AuthUser | null>(null);
+
   useEffect(() => {
     const savedAuth = localStorage.getItem(AUTH_STORAGE_KEY);
     if (savedAuth) {
@@ -80,11 +45,11 @@ export function AuthProvider({ children }: {children: ReactNode;}) {
         const parsed = JSON.parse(savedAuth);
         setUser(parsed);
       } catch (e) {
-        console.error('Failed to load auth from localStorage');
+        console.error("Failed to load auth from localStorage");
       }
     }
   }, []);
-  // Save user to localStorage on change
+
   useEffect(() => {
     if (user) {
       localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user));
@@ -92,80 +57,86 @@ export function AuthProvider({ children }: {children: ReactNode;}) {
       localStorage.removeItem(AUTH_STORAGE_KEY);
     }
   }, [user]);
+
   const login = async (
-  email: string,
-  password: string)
-  : Promise<{
-    success: boolean;
-    message: string;
-  }> => {
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    const mockUser = mockUsers.find(
-      (u) =>
-      u.email.toLowerCase() === email.toLowerCase() &&
-      u.password === password
-    );
-    if (mockUser) {
-      setUser(mockUser.user);
+    email: string,
+    password: string
+  ): Promise<{ success: boolean; message: string }> => {
+    try {
+      const response = await axios.post(`${API_BASE_URL}/users/login`, {
+        email,
+        password,
+      });
+
+      const data = response.data;
+
+      const normalizedUser: AuthUser = {
+        id: data.user.id,
+        name: data.user.username,
+        email: data.user.email,
+        role: data.user.isAdmin ? "admin" : "customer",
+        isAdmin: data.user.isAdmin,
+        addresses: [],
+        createdAt: new Date().toISOString(),
+      };
+
+      localStorage.setItem(TOKEN_STORAGE_KEY, data.token);
+      setUser(normalizedUser);
+
       return {
         success: true,
-        message: 'Login successful!'
+        message: data.message || "Login successful!",
       };
-    }
-    return {
-      success: false,
-      message: 'Invalid email or password'
-    };
-  };
-  const register = async (
-  name: string,
-  email: string,
-  password: string)
-  : Promise<{
-    success: boolean;
-    message: string;
-  }> => {
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    // Check if email already exists
-    const exists = mockUsers.some(
-      (u) => u.email.toLowerCase() === email.toLowerCase()
-    );
-    if (exists) {
+    } catch (error: any) {
       return {
         success: false,
-        message: 'Email already registered'
+        message:
+          error.response?.data?.message || "Invalid email or password",
       };
     }
-    // Create new user
-    const newUser: User = {
-      id: `user-${Date.now()}`,
-      name,
-      email,
-      role: 'customer',
-      addresses: [],
-      createdAt: new Date().toISOString()
-    };
-    setUser(newUser);
-    return {
-      success: true,
-      message: 'Registration successful!'
-    };
   };
+
+  const register = async (
+    name: string,
+    email: string,
+    password: string
+  ): Promise<{ success: boolean; message: string }> => {
+    try {
+      await axios.post(`${API_BASE_URL}/users/register`, {
+        username: name,
+        email,
+        password,
+      });
+
+      const loginResult = await login(email, password);
+      return loginResult;
+    } catch (error: any) {
+      return {
+        success: false,
+        message:
+          error.response?.data?.message || "Registration failed",
+      };
+    }
+  };
+
   const logout = () => {
     setUser(null);
+    localStorage.removeItem(TOKEN_STORAGE_KEY);
+    localStorage.removeItem(AUTH_STORAGE_KEY);
   };
-  const updateUser = (updates: Partial<User>) => {
+
+  const updateUser = (updates: Partial<AuthUser>) => {
     if (user) {
       setUser({
         ...user,
-        ...updates
+        ...updates,
       });
     }
   };
+
   const isAuthenticated = user !== null;
-  const isAdmin = user?.role === 'admin';
+  const isAdmin = user?.role === "admin" || user?.isAdmin === true;
+
   return (
     <AuthContext.Provider
       value={{
@@ -175,17 +146,18 @@ export function AuthProvider({ children }: {children: ReactNode;}) {
         login,
         register,
         logout,
-        updateUser
-      }}>
-
+        updateUser,
+      }}
+    >
       {children}
-    </AuthContext.Provider>);
-
+    </AuthContext.Provider>
+  );
 }
+
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 }

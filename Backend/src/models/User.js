@@ -1,134 +1,60 @@
 import mongoose from "mongoose";
+import bcrypt from "bcryptjs";
 
-const orderItemSchema = new mongoose.Schema(
+const userSchema = new mongoose.Schema(
   {
-    product: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Product",
+    username: {
+      type: String,
       required: true,
+      unique: true,
+      trim: true,
     },
-    name: {
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
+      lowercase: true,
+    },
+    password: {
       type: String,
       required: true,
     },
-    image: {
-      type: String,
-      required: true,
+    isAdmin: {
+      type: Boolean,
+      default: false,
     },
-    price: {
-      type: Number,
-      required: true,
-    },
-    qty: {
-      type: Number,
-      required: true,
-      min: 1,
-    },
-  },
-  { _id: false }
-);
-
-const shippingAddressSchema = new mongoose.Schema(
-  {
-    fullName: {
-      type: String,
-      required: true,
-    },
-    phone: {
-      type: String,
-      required: true,
-    },
-    address: {
-      type: String,
-      required: true,
-    },
-    city: {
-      type: String,
-      required: true,
-    },
-    postalCode: {
-      type: String,
-      default: "",
-    },
-    country: {
-      type: String,
-      required: true,
-    },
-  },
-  { _id: false }
-);
-
-const orderSchema = new mongoose.Schema(
-  {
-    user: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
-    },
-    orderItems: {
-      type: [orderItemSchema],
-      required: true,
-      validate: {
-        validator: function (value) {
-          return value.length > 0;
+    cart: [
+      {
+        product: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Product",
         },
-        message: "Order must have at least one item",
+        quantity: {
+          type: Number,
+          default: 1,
+        },
       },
-    },
-    shippingAddress: {
-      type: shippingAddressSchema,
-      required: true,
-    },
-    paymentMethod: {
-      type: String,
-      required: true,
-      default: "Cash on Delivery",
-    },
-    itemsPrice: {
-      type: Number,
-      required: true,
-      default: 0,
-    },
-    shippingPrice: {
-      type: Number,
-      required: true,
-      default: 0,
-    },
-    taxPrice: {
-      type: Number,
-      required: true,
-      default: 0,
-    },
-    totalPrice: {
-      type: Number,
-      required: true,
-      default: 0,
-    },
-    isPaid: {
-      type: Boolean,
-      required: true,
-      default: false,
-    },
-    paidAt: {
-      type: Date,
-    },
-    isDelivered: {
-      type: Boolean,
-      required: true,
-      default: false,
-    },
-    deliveredAt: {
-      type: Date,
-    },
-    orderStatus: {
-      type: String,
-      default: "Processing",
-    },
+    ],
+    wishlist: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Product",
+      },
+    ],
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+  }
 );
 
-// Remove module.exports = mongoose.model("Order", orderSchema);
+userSchema.pre("save", async function () {
+  if (!this.isModified("password")) return;
 
-const Order = mongoose.model("Order", orderSchema);
-export default Order;
+  const salt = await bcrypt.genSalt(10);
+  this.password = await bcrypt.hash(this.password, salt);
+});
+
+const User = mongoose.models.User || mongoose.model("User", userSchema);
+
+export default User;
