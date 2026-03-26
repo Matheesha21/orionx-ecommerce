@@ -11,6 +11,7 @@ import uploadRoutes from "./routes/uploadRoutes.js";
 import orderRoutes from "./routes/orderRoutes.js";
 import infoRoutes from "./routes/infoRoutes.js"; 
 import chatbotRoutes from "./routes/chatbotRoutes.js";
+import syncRoutes from "./agent/routes/syncRoutes.js";
 
 const app = express();
 
@@ -31,6 +32,7 @@ app.use("/api/uploads", uploadRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/info", infoRoutes);
 app.use("/api/chatbot", chatbotRoutes);
+app.use("/api/agent/sync", syncRoutes);
 
 // Initialize Database
 connectDB();
