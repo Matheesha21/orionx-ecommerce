@@ -29,6 +29,11 @@ export const productsApi = {
     return response.data;
   },
 
+  getBySlug: async (slug: string) => {
+  const response = await axios.get(`${API_BASE_URL}/products/slug/${slug}`);
+  return response.data;
+  },
+
   create: async (productData: CreateProductPayload, token: string) => {
     const response = await axios.post(`${API_BASE_URL}/products`, productData, {
       headers: {
@@ -40,28 +45,31 @@ export const productsApi = {
   },
 
   delete: async (productId: string, token: string) => {
-    const response = await axios.delete(`${API_BASE_URL}/products/${productId}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    const response = await axios.delete(
+      `${API_BASE_URL}/products/${productId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
 
     return response.data;
   },
 
   update: async (productId: string, data: any, token: string) => {
-  const response = await axios.put(
-    `${API_BASE_URL}/products/${productId}`,
-    data,
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    }
-  );
+    const response = await axios.put(
+      `${API_BASE_URL}/products/${productId}`,
+      data,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
 
-  return response.data;
-},
+    return response.data;
+  },
 
   uploadImage: async (file: File, token: string) => {
     const formData = new FormData();

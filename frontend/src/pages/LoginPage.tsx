@@ -1,14 +1,9 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import {
-  MailIcon,
-  LockIcon,
-  EyeIcon,
-  EyeOffIcon,
-  AlertCircleIcon } from
-'lucide-react';
 import { motion } from 'framer-motion';
+import { Eye, EyeOff, Mail, Lock, AlertCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+
 const LOGO_URL = "/WhatsApp_Image_2025-08-21_at_12.50.56_(1).jpg";
 
 export function LoginPage() {
@@ -17,169 +12,145 @@ export function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
   const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const from =
-  (
-  location.state as {
-    from?: {
-      pathname: string;
-    };
-  })?.
-  from?.pathname || '/';
+
+  const from = location.state?.from?.pathname || '/';
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
-    const result = await login(email, password);
-    setIsLoading(false);
-    if (result.success) {
-      navigate(from, {
-        replace: true
-      });
-    } else {
-      setError(result.message);
+
+    try {
+      const result = await login(email, password);
+
+      if (result.success) {
+        navigate(from, { replace: true });
+      } else {
+        setError(result.message || 'Login failed');
+      }
+    } catch (err: any) {
+      setError(err?.message || 'Login failed');
+    } finally {
+      setIsLoading(false);
     }
   };
+
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center px-4 py-16">
-      {/* Background Effects */}
-      <div className="absolute inset-0 grid-pattern opacity-50" />
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl" />
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-secondary/10 rounded-full blur-3xl" />
-
+    <div className="min-h-screen bg-background flex items-center justify-center px-4 py-8">
       <motion.div
-        initial={{
-          opacity: 0,
-          y: 20
-        }}
-        animate={{
-          opacity: 1,
-          y: 0
-        }}
-        transition={{
-          duration: 0.5
-        }}
-        className="relative w-full max-w-md">
-
-        <div className="bg-surface/80 backdrop-blur border border-border rounded-2xl p-8">
-          {/* Logo */}
+        initial={{ opacity: 0, y: 24 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35 }}
+        className="w-full max-w-md"
+      >
+        <div className="bg-surface border border-border rounded-2xl shadow-lg p-8">
           <div className="text-center mb-8">
-            <Link to="/">
-              <img
-                src={LOGO_URL}
-                alt="ORIONX"
-                className="h-12 w-auto mx-auto mb-4" />
-
-            </Link>
-            <h1 className="text-2xl font-bold text-text-primary">
+            <img
+              src={LOGO_URL}
+              alt="ORIONX"
+              className="w-40 h-auto object-contain mx-auto mb-4"
+            />
+            <h1 className="text-3xl font-bold text-text-primary mb-2">
               Welcome Back
             </h1>
-            <p className="text-text-secondary mt-2">Sign in to your account</p>
-          </div>
-
-          {/* Demo Credentials */}
-          <div className="mb-6 p-4 bg-primary/10 border border-primary/30 rounded-lg">
-            <p className="text-xs text-primary font-medium mb-2">
-              Demo Credentials:
-            </p>
-            <p className="text-xs text-text-secondary">
-              Admin: admin@orionx.com / admin123
-            </p>
-            <p className="text-xs text-text-secondary">
-              User: demo@orionx.com / demo123
+            <p className="text-text-secondary">
+              Sign in to your ORIONX account
             </p>
           </div>
 
-          {/* Error Message */}
-          {error &&
-          <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-lg flex items-center gap-3">
-              <AlertCircleIcon className="w-5 h-5 text-red-400 flex-shrink-0" />
-              <p className="text-sm text-red-400">{error}</p>
+          {error && (
+            <div className="mb-6 flex items-start gap-3 rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-red-400">
+              <AlertCircle className="w-5 h-5 mt-0.5 shrink-0" />
+              <p className="text-sm">{error}</p>
             </div>
-          }
+          )}
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium text-text-secondary mb-2">
-
+              <label className="block text-sm font-medium text-text-primary mb-2">
                 Email Address
               </label>
               <div className="relative">
-                <MailIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-muted" />
+                <Mail className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" />
                 <input
-                  id="email"
                   type="email"
+                  placeholder="Enter your email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="w-full pl-10 pr-4 py-3 bg-background border border-border rounded-lg text-text-primary placeholder:text-text-muted focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
-                  placeholder="you@example.com" />
-
+                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-border bg-background text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary"
+                />
               </div>
             </div>
 
             <div>
-              <label
-                htmlFor="password"
-                className="block text-sm font-medium text-text-secondary mb-2">
-
+              <label className="block text-sm font-medium text-text-primary mb-2">
                 Password
               </label>
               <div className="relative">
-                <LockIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-muted" />
+                <Lock className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" />
                 <input
-                  id="password"
                   type={showPassword ? 'text' : 'password'}
+                  placeholder="Enter your password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="w-full pl-10 pr-12 py-3 bg-background border border-border rounded-lg text-text-primary placeholder:text-text-muted focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
-                  placeholder="••••••••" />
-
+                  className="w-full pl-10 pr-12 py-3 rounded-xl border border-border bg-background text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary"
+                />
                 <button
                   type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-secondary transition-colors">
-
-                  {showPassword ?
-                  <EyeOffIcon className="w-5 h-5" /> :
-
-                  <EyeIcon className="w-5 h-5" />
-                  }
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary"
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
                 </button>
               </div>
+            </div>
+
+            <div className="flex items-center justify-between text-sm">
+              <label className="flex items-center gap-2 text-text-secondary">
+                <input type="checkbox" className="rounded border-border" />
+                Remember me
+              </label>
+
+              <Link
+                to="/forgot-password"
+                className="text-primary hover:text-primary/80 transition-colors"
+              >
+                Forgot password?
+              </Link>
             </div>
 
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full py-3 bg-primary hover:bg-primary-light text-white font-semibold rounded-lg flex items-center justify-center gap-2 disabled:opacity-50 transition-colors">
-
-              {isLoading ?
-              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> :
-
-              'Sign In'
-              }
+              className="w-full py-3 rounded-xl bg-primary text-white font-medium hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed transition"
+            >
+              {isLoading ? 'Signing In...' : 'Sign In'}
             </button>
           </form>
 
-          {/* Register Link */}
-          <p className="text-center text-text-secondary mt-6">
-            Don't have an account?{' '}
-            <Link
-              to="/register"
-              className="text-primary hover:text-primary-light font-medium transition-colors">
-
-              Create one
-            </Link>
-          </p>
+          <div className="mt-8 text-center">
+            <p className="text-text-secondary">
+              Don&apos;t have an account?{' '}
+              <Link
+                to="/register"
+                className="text-primary font-medium hover:text-primary/80 transition-colors"
+              >
+                Create one
+              </Link>
+            </p>
+          </div>
         </div>
       </motion.div>
-    </div>);
-
+    </div>
+  );
 }
