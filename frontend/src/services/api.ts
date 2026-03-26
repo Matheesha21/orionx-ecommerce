@@ -37,7 +37,7 @@ export const API_BASE_URL = '/api';
 export const USE_MOCK_DATA = false;
 
 // ─── Token Management ────────────────────────────────────────
-const TOKEN_KEY = 'orionx-token';
+const TOKEN_KEY = 'token';
 
 export function getToken(): string | null {
   return localStorage.getItem(TOKEN_KEY);
