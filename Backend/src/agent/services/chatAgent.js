@@ -1,4 +1,4 @@
-import { HumanMessage, SystemMessage } from "@langchain/core/messages";
+import { HumanMessage, SystemMessage, AIMessage } from "@langchain/core/messages";
 import { getModel } from "../config/models.js";
 import { loadHistory, saveExchange } from "../memory/memoryStore.js";
 
@@ -7,17 +7,6 @@ You help customers find products, answer questions about items,
 and provide a friendly shopping experience.
 Keep your responses concise and helpful.`;
 
-/**
- * Streams a chat response token-by-token via callbacks.
- * Uses in-memory conversation summary buffer to maintain short-term context per user.
- *
- * @param {string} userMessage  - The user's input message
- * @param {object} options
- * @param {string} options.userId - The authenticated user's ID
- * @param {"faster"|"smarter"} options.mode - Model mode (default "faster")
- * @param {(token: string) => void} options.onToken   - Called for every text chunk
- * @param {(status: string) => void} options.onProgress - Called for progress updates
- */
 export const streamChat = async (
   userMessage,
   { userId, mode = "faster", onToken, onProgress } = {}
@@ -26,8 +15,11 @@ export const streamChat = async (
 
   const model = getModel(mode, true);
 
-  // Load conversation history (summary + recent exchanges)
-  const history = loadHistory(userId);
+  const rawHistory = loadHistory(userId) || [];
+
+  const history = rawHistory.filter(
+    (msg) => msg instanceof HumanMessage || msg instanceof AIMessage
+  );
 
   const messages = [
     new SystemMessage(SYSTEM_PROMPT),
@@ -37,7 +29,6 @@ export const streamChat = async (
 
   onProgress?.("💬 Understanding your request...");
 
-  // Inject streaming callback
   model.callbacks = [
     {
       handleLLMNewToken(token) {
@@ -52,7 +43,6 @@ export const streamChat = async (
 
   const aiText = typeof response.content === "string" ? response.content : "";
 
-  // Save exchange to memory (may trigger summarization of older messages)
   await saveExchange(userId, userMessage, aiText);
 
   onProgress?.("done");
