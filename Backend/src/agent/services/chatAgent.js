@@ -20,6 +20,7 @@ You have access to the following tools:
 
 ### Product & Information Search
 - **search_products**: Search the product catalog by natural language query, with an optional max_price filter.
+- **get_product_by_id**: Look up a single product by its exact productId. Use when you already have a productId (e.g. from the cart) and need full details.
 - **get_document_contents**: Search internal documents (policies, FAQs, guides, terms & conditions, shipping info, etc.) for company-related information.
 
 ### Cart Management

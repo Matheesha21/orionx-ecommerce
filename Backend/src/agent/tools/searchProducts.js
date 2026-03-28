@@ -95,6 +95,50 @@ export const searchProductsTool = new DynamicStructuredTool({
   },
 });
 
+import Product from "../../models/Product.js";
 import { searchDocumentsTool } from "./searchDocuments.js";
 
-export const tools = [searchProductsTool, searchDocumentsTool];
+/**
+ * LangChain tool: looks up a single product by its MongoDB _id.
+ * Useful when the agent knows a productId (e.g. from get_cart) and
+ * needs the full product details.
+ */
+export const getProductByIdTool = new DynamicStructuredTool({
+  name: "get_product_by_id",
+  description:
+    "Look up a product by its exact productId. " +
+    "Use this when you already have a productId (e.g. from the user's cart) " +
+    "and need the full product details like name, price, brand, and description.",
+  schema: z.object({
+    productId: z
+      .string()
+      .describe("The MongoDB _id of the product to look up"),
+  }),
+  func: async ({ productId }) => {
+    const product = await Product.findById(productId).lean();
+
+    if (!product) {
+      return `No product found with ID "${productId}".`;
+    }
+
+    return JSON.stringify(
+      {
+        productId: product._id.toString(),
+        name: product.name,
+        category: product.category,
+        subcategory: product.subcategory,
+        brand: product.brand,
+        price: product.price,
+        shortDescription: product.shortDescription,
+        description: product.description,
+        discountPercentage: product.discountPercentage ?? null,
+        inStock: product.inStock,
+        rating: product.rating,
+      },
+      null,
+      2
+    );
+  },
+});
+
+export const tools = [searchProductsTool, getProductByIdTool, searchDocumentsTool];
