@@ -9,7 +9,7 @@ import { loadHistory, saveExchange } from "../memory/memoryStore.js";
 import { tools as staticTools } from "../tools/searchProducts.js";
 import { createCartTools } from "../tools/cartTools.js";
 
-const MAX_TOOL_ROUNDS = 3;
+const MAX_TOOL_ROUNDS = 5;
 
 const SYSTEM_PROMPT = `You are OrionX, a helpful e-commerce shopping assistant.
 You help customers find products, answer questions about items, manage their cart, and provide a friendly shopping experience.
@@ -125,8 +125,7 @@ export const streamChat = async (
 
     round++;
     const toolNames = toolCalls.map((tc) => tc.name).join(", ");
-    console.log(`Round ${round}: Model wants to call tools: ${toolNames}`);
-    onProgress?.(`Using tools: ${toolNames} (round ${round})`);
+    onProgress?.(`Using tools: ${toolNames}`);
 
     // Execute all tool calls in parallel
     const toolResults = await Promise.all(
@@ -139,39 +138,35 @@ export const streamChat = async (
     }
   }
 
-  // Final streaming pass for the text response
+  // Final streaming pass — always stream the answer
   onProgress?.("Preparing a response...");
 
-  // Check if the last message is already an AI text response (from the loop break)
+  // If the loop broke because the model gave a text answer (no tool calls),
+  // that non-streamed response is already in messages. Remove it so we can
+  // re-generate it as a stream.
   const lastMsg = messages[messages.length - 1];
-  const alreadyHasAnswer =
+  const lastIsTextAnswer =
     lastMsg._getType?.() === "ai" &&
     typeof lastMsg.content === "string" &&
     lastMsg.content.length > 0 &&
     (!lastMsg.tool_calls || lastMsg.tool_calls.length === 0);
 
-  let aiText = "";
-
-  if (alreadyHasAnswer) {
-    // The non-streaming invoke already produced the answer.
-    // Re-emit it for the SSE stream.
-    aiText = lastMsg.content;
-    onToken?.(aiText);
-  } else {
-    // Stream a fresh response (after tool results, or if last round hit the limit)
-    const streamModel = getModel(mode, true);
-    streamModel.callbacks = [
-      {
-        handleLLMNewToken(token) {
-          onToken?.(token);
-        },
-      },
-    ];
-
-    const finalResponse = await streamModel.invoke(messages);
-    aiText =
-      typeof finalResponse.content === "string" ? finalResponse.content : "";
+  if (lastIsTextAnswer) {
+    messages.pop();
   }
+
+  const streamModel = getModel(mode, true);
+  streamModel.callbacks = [
+    {
+      handleLLMNewToken(token) {
+        onToken?.(token);
+      },
+    },
+  ];
+
+  const finalResponse = await streamModel.invoke(messages);
+  const aiText =
+    typeof finalResponse.content === "string" ? finalResponse.content : "";
 
   // Save the exchange to memory
   await saveExchange(userId, userMessage, aiText);
