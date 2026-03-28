@@ -48,6 +48,19 @@ You have access to the following tools:
 - If no results are found, let the user know and suggest broadening their search.`;
 
 /**
+ * Human-friendly progress messages for each tool.
+ * DynamicStructuredTool discards custom fields, so we store them separately.
+ */
+const TOOL_MESSAGES = {
+  search_products: "Searching for products...",
+  get_product_by_id: "Looking up product details...",
+  get_document_contents: "Looking through documents...",
+  get_cart: "Looking at your cart...",
+  add_to_cart: "Adding product to your cart...",
+  remove_from_cart: "Removing product from your cart...",
+};
+
+/**
  * Looks up a tool by name and executes it with the given arguments.
  */
 const executeTool = async (toolCall, allTools) => {
@@ -68,7 +81,11 @@ const executeTool = async (toolCall, allTools) => {
       content: typeof result === "string" ? result : JSON.stringify(result),
     });
   } catch (err) {
-    console.error(`[executeTool] ${toolCall.name} failed:`, err.message, err.stack);
+    console.error(
+      `[executeTool] ${toolCall.name} failed:`,
+      err.message,
+      err.stack,
+    );
     return new ToolMessage({
       toolCallId: toolCall.id,
       name: toolCall.name,
@@ -87,7 +104,7 @@ const executeTool = async (toolCall, allTools) => {
  */
 export const streamChat = async (
   userMessage,
-  { userId, mode = "faster", onToken, onProgress } = {}
+  { userId, mode = "faster", onToken, onProgress } = {},
 ) => {
   onProgress?.("Getting things ready...");
 
@@ -125,11 +142,18 @@ export const streamChat = async (
 
     round++;
     const toolNames = toolCalls.map((tc) => tc.name).join(", ");
-    onProgress?.(`Using tools: ${toolNames}`);
+
+    // Send progress messages for each tool being called
+    for (const tc of toolCalls) {
+      const msg = TOOL_MESSAGES[tc.name];
+      if (msg) {
+        onProgress?.(msg);
+      }
+    }
 
     // Execute all tool calls in parallel
     const toolResults = await Promise.all(
-      toolCalls.map((tc) => executeTool(tc, allTools))
+      toolCalls.map((tc) => executeTool(tc, allTools)),
     );
 
     // Append tool results to the message chain
