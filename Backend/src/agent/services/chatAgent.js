@@ -182,8 +182,15 @@ export const streamChat = async (
   const streamModel = getModel(mode, true);
   streamModel.callbacks = [
     {
-      handleLLMNewToken(token) {
-        onToken?.(token);
+      handleLLMNewToken(chunk) {
+        // Split each chunk into word-level tokens for smoother UX.
+        // Splits on word boundaries while preserving whitespace/newlines.
+        const tokens = chunk.match(/\S+|\s+/g);
+        if (tokens) {
+          for (const t of tokens) {
+            onToken?.(t);
+          }
+        }
       },
     },
   ];
