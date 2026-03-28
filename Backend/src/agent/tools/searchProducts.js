@@ -74,7 +74,7 @@ export const searchProductsTool = new DynamicStructuredTool({
     }
 
     const results = rows.map((r) => ({
-      id: r._id,
+      productId: r._id,
       name: r.name,
       category: r.category,
       subcategory: r.subcategory,
@@ -84,8 +84,14 @@ export const searchProductsTool = new DynamicStructuredTool({
       discountPercentage: r.discountPercentage ? Number(r.discountPercentage) : null,
       similarity: Number(r.similarity).toFixed(3),
     }));
+    results.forEach((r) => {
+      console.log(`Found product: ${r.name} with productId ${r.productId} similarity ${r.similarity}`);
+    });
 
-    return JSON.stringify(results, null, 2);
+    return (
+      "IMPORTANT: Use the exact productId values below when calling add_to_cart or other cart tools.\n" +
+      JSON.stringify(results, null, 2)
+    );
   },
 });
 

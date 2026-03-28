@@ -6,35 +6,51 @@ import {
 } from "@langchain/core/messages";
 import { getModel } from "../config/models.js";
 import { loadHistory, saveExchange } from "../memory/memoryStore.js";
-import { tools } from "../tools/searchProducts.js";
+import { tools as staticTools } from "../tools/searchProducts.js";
+import { createCartTools } from "../tools/cartTools.js";
 
 const MAX_TOOL_ROUNDS = 3;
 
 const SYSTEM_PROMPT = `You are OrionX, a helpful e-commerce shopping assistant.
-You help customers find products, answer questions about items, and provide a friendly shopping experience.
+You help customers find products, answer questions about items, manage their cart, and provide a friendly shopping experience.
 Keep your responses concise and helpful.
 
 ## Tool Usage
 You have access to the following tools:
+
+### Product & Information Search
 - **search_products**: Search the product catalog by natural language query, with an optional max_price filter.
 - **get_document_contents**: Search internal documents (policies, FAQs, guides, terms & conditions, shipping info, etc.) for company-related information.
 
-Guidelines for using tools:
+### Cart Management
+- **get_cart**: View the user's current shopping cart.
+- **add_to_cart**: Add a product to the cart. Requires a productId — always search for the product first to get the correct ID before adding.
+- **remove_from_cart**: Remove an item entirely from the cart.
+
+## Guidelines
 - Use search_products whenever the user asks about products, wants recommendations, comparisons, or anything requiring catalog data.
-- Use get_document_contents whenever the user asks about store policies, privacy, shipping, returns, refunds, terms of service, or any company-related information.
-- You can call multiple tools in a single turn if needed (up to 3). For example, if the user asks about a product AND the return policy, call both tools at once.
-- If the first search doesn't give you enough information, you may search again with a refined query.
-- Do NOT use any tools if the user is making casual conversation or asking something clearly unrelated.
-- When presenting product results, format them nicely with name, brand, price, and a brief description.
+- Use get_document_contents for store policies, privacy, shipping, returns, refunds, terms of service, or company info.
+- You can call multiple tools in a single turn if needed (up to 3). For example, if the user asks about a product AND the return policy, call both at once.
+- If the first search doesn't give enough information, refine your query and search again.
+- Do NOT use tools for casual conversation or clearly unrelated questions.
+
+### Cart-Specific Guidelines
+- When the user asks to add a product by name, FIRST use search_products to find the exact product and its ID, THEN use add_to_cart with that ID.
+- When removing or updating, if you don't know the productId, use get_cart first to look it up.
+- Always confirm cart changes to the user by summarizing what was added/removed/updated.
+- When presenting cart contents, show product names, quantities, prices, and the total.
+
+### Presentation
+- Format product results nicely with name, brand, price, and a brief description.
 - If products have a discount, mention it.
-- When answering from documents, provide clear and helpful answers based on the document content. Do not fabricate policy details.
+- When answering from documents, provide clear answers based on document content. Do not fabricate policy details.
 - If no results are found, let the user know and suggest broadening their search.`;
 
 /**
  * Looks up a tool by name and executes it with the given arguments.
  */
-const executeTool = async (toolCall) => {
-  const tool = tools.find((t) => t.name === toolCall.name);
+const executeTool = async (toolCall, allTools) => {
+  const tool = allTools.find((t) => t.name === toolCall.name);
   if (!tool) {
     return new ToolMessage({
       toolCallId: toolCall.id,
@@ -51,6 +67,7 @@ const executeTool = async (toolCall) => {
       content: typeof result === "string" ? result : JSON.stringify(result),
     });
   } catch (err) {
+    console.error(`[executeTool] ${toolCall.name} failed:`, err.message, err.stack);
     return new ToolMessage({
       toolCallId: toolCall.id,
       name: toolCall.name,
@@ -74,7 +91,12 @@ export const streamChat = async (
   onProgress?.("Getting things ready...");
 
   const model = getModel(mode, true);
-  const modelWithTools = model.bindTools(tools);
+
+  // Build per-request tools array: static tools + user-bound cart tools
+  const cartTools = createCartTools(userId);
+  const allTools = [...staticTools, ...cartTools];
+
+  const modelWithTools = model.bindTools(allTools);
 
   // Build message array: system + history + new user message
   const history = loadHistory(userId);
@@ -102,10 +124,13 @@ export const streamChat = async (
 
     round++;
     const toolNames = toolCalls.map((tc) => tc.name).join(", ");
+    console.log(`Round ${round}: Model wants to call tools: ${toolNames}`);
     onProgress?.(`Using tools: ${toolNames} (round ${round})`);
 
     // Execute all tool calls in parallel
-    const toolResults = await Promise.all(toolCalls.map(executeTool));
+    const toolResults = await Promise.all(
+      toolCalls.map((tc) => executeTool(tc, allTools))
+    );
 
     // Append tool results to the message chain
     for (const result of toolResults) {
@@ -128,7 +153,7 @@ export const streamChat = async (
 
   if (alreadyHasAnswer) {
     // The non-streaming invoke already produced the answer.
-    // Re-emit it token-by-token for the SSE stream.
+    // Re-emit it for the SSE stream.
     aiText = lastMsg.content;
     onToken?.(aiText);
   } else {
