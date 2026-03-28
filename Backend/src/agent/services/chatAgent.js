@@ -8,6 +8,7 @@ import { getModel } from "../config/models.js";
 import { loadHistory, saveExchange } from "../memory/memoryStore.js";
 import { tools as staticTools } from "../tools/searchProducts.js";
 import { createCartTools } from "../tools/cartTools.js";
+import { createWishlistTools } from "../tools/wishlistTools.js";
 
 const MAX_TOOL_ROUNDS = 5;
 
@@ -28,6 +29,11 @@ You have access to the following tools:
 - **add_to_cart**: Add a product to the cart. Requires a productId — always search for the product first to get the correct ID before adding.
 - **remove_from_cart**: Remove an item entirely from the cart.
 
+### Wishlist Management
+- **get_wishlist**: View the user's saved wishlist items.
+- **add_to_wishlist**: Save a product to the wishlist. Requires a productId — always search for the product first to get the correct ID before adding.
+- **remove_from_wishlist**: Remove an item from the wishlist.
+
 ## Guidelines
 - Use search_products whenever the user asks about products, wants recommendations, comparisons, or anything requiring catalog data.
 - Use get_document_contents for store policies, privacy, shipping, returns, refunds, terms of service, or company info.
@@ -40,6 +46,11 @@ You have access to the following tools:
 - When removing or updating, if you don't know the productId, use get_cart first to look it up.
 - Always confirm cart changes to the user by summarizing what was added/removed/updated.
 - When presenting cart contents, show product names, quantities, prices, and the total.
+
+### Wishlist-Specific Guidelines
+- Same approach as cart: FIRST search for the product to get the correct ID, THEN add/remove.
+- If you don't know the productId when removing, use get_wishlist first to look it up.
+- Always confirm wishlist changes to the user.
 
 ### Presentation
 - Format product results nicely with name, brand, price, and a brief description.
@@ -58,6 +69,9 @@ const TOOL_MESSAGES = {
   get_cart: "Looking at your cart...",
   add_to_cart: "Adding product to your cart...",
   remove_from_cart: "Removing product from your cart...",
+  get_wishlist: "Looking at your wishlist...",
+  add_to_wishlist: "Adding product to your wishlist...",
+  remove_from_wishlist: "Removing product from your wishlist...",
 };
 
 /**
@@ -110,9 +124,10 @@ export const streamChat = async (
 
   const model = getModel(mode, true);
 
-  // Build per-request tools array: static tools + user-bound cart tools
+  // Build per-request tools array: static tools + user-bound cart & wishlist tools
   const cartTools = createCartTools(userId);
-  const allTools = [...staticTools, ...cartTools];
+  const wishlistTools = createWishlistTools(userId);
+  const allTools = [...staticTools, ...cartTools, ...wishlistTools];
 
   const modelWithTools = model.bindTools(allTools);
 
@@ -179,12 +194,11 @@ export const streamChat = async (
     messages.pop();
   }
 
-  const streamModel = getModel(mode, true);
-  streamModel.callbacks = [
+  // Set streaming callbacks on the base model so handleLLMNewToken fires.
+  // modelWithTools is a RunnableBinding — callbacks set on it don't reach the LLM.
+  model.callbacks = [
     {
       handleLLMNewToken(chunk) {
-        // Split each chunk into word-level tokens for smoother UX.
-        // Splits on word boundaries while preserving whitespace/newlines.
         const tokens = chunk.match(/\S+|\s+/g);
         if (tokens) {
           for (const t of tokens) {
@@ -195,7 +209,7 @@ export const streamChat = async (
     },
   ];
 
-  const finalResponse = await streamModel.invoke(messages);
+  const finalResponse = await modelWithTools.invoke(messages);
   const aiText =
     typeof finalResponse.content === "string" ? finalResponse.content : "";
 
