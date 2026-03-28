@@ -84,9 +84,6 @@ export const searchProductsTool = new DynamicStructuredTool({
       discountPercentage: r.discountPercentage ? Number(r.discountPercentage) : null,
       similarity: Number(r.similarity).toFixed(3),
     }));
-    results.forEach((r) => {
-      console.log(`Found product: ${r.name} with productId ${r.productId} similarity ${r.similarity}`);
-    });
 
     return (
       "IMPORTANT: Use the exact productId values below when calling add_to_cart or other cart tools.\n" +
