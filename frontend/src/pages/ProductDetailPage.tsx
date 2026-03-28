@@ -11,8 +11,7 @@ import {
   RefreshCwIcon,
   CheckIcon,
 } from "lucide-react";
-import { motion } from "framer-motion";
-import { productsApi } from "../services/api";
+import { productsApi } from "../services/productService";
 import { userApi } from "../services/userService";
 import { useApi } from "../hooks/useApi";
 import { useCompare } from "../context/CompareContext";
@@ -50,6 +49,7 @@ export function ProductDetailPage() {
     return {
       ...p,
       id: p.id || p._id,
+      images: Array.isArray(p.images) && p.images.length > 0 ? p.images : ["/placeholder-product.png"],
     };
   }, [productResponse]);
 
@@ -165,7 +165,7 @@ export function ProductDetailPage() {
             <h1 className="text-3xl font-bold mb-4">{product.name}</h1>
 
             <div className="mb-4">
-              <RatingStars rating={product.rating} />
+              <RatingStars rating={product.rating || 0} />
             </div>
 
             <PriceDisplay
@@ -174,7 +174,7 @@ export function ProductDetailPage() {
             />
 
             <p className="mt-6 mb-6 text-text-secondary">
-              {product.shortDescription}
+              {product.shortDescription || product.description}
             </p>
 
             {actionMessage && (
@@ -210,7 +210,7 @@ export function ProductDetailPage() {
 
               <button
                 onClick={handleAddToCart}
-                disabled={addingToCart}
+                disabled={addingToCart || !product.inStock}
                 className="bg-primary text-white px-6 py-3 rounded flex items-center gap-2 disabled:opacity-50"
               >
                 <ShoppingCartIcon size={18} />
@@ -242,11 +242,13 @@ export function ProductDetailPage() {
                 <p className="font-medium">Fast Delivery</p>
                 <p className="text-sm text-text-secondary">3-5 business days</p>
               </div>
+
               <div className="p-4 rounded-lg border border-border bg-surface/50">
                 <ShieldCheckIcon className="w-5 h-5 mb-2 text-primary" />
                 <p className="font-medium">Warranty</p>
                 <p className="text-sm text-text-secondary">1 year standard</p>
               </div>
+
               <div className="p-4 rounded-lg border border-border bg-surface/50">
                 <RefreshCwIcon className="w-5 h-5 mb-2 text-primary" />
                 <p className="font-medium">Returns</p>
@@ -266,6 +268,7 @@ export function ProductDetailPage() {
                 >
                   Description
                 </button>
+
                 <button
                   onClick={() => setActiveTab("specs")}
                   className={`px-4 py-2 rounded-lg ${
@@ -276,6 +279,7 @@ export function ProductDetailPage() {
                 >
                   Specs
                 </button>
+
                 <button
                   onClick={() => setActiveTab("reviews")}
                   className={`px-4 py-2 rounded-lg ${

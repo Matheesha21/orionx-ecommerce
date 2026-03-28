@@ -1,4 +1,4 @@
-import React, { useState, Fragment, ComponentType } from "react";
+import React, { useState, Fragment, ComponentType, useEffect } from "react";
 import { useNavigate, Navigate, Link } from "react-router-dom";
 import {
   CheckIcon,
@@ -8,13 +8,30 @@ import {
   ShieldCheckIcon,
 } from "lucide-react";
 import { motion } from "framer-motion";
-import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
 import { Breadcrumb } from "../components/ui/Breadcrumb";
 import { CheckoutFormData } from "../types";
 import { ordersApi } from "../services/orderService";
+import { userApi } from "../services/userService";
 
 type Step = "shipping" | "payment" | "review" | "confirmation";
+
+type CartProduct = {
+  _id: string;
+  id?: string;
+  name: string;
+  slug: string;
+  brand: string;
+  price: number;
+  originalPrice?: number;
+  stockCount: number;
+  images: string[];
+};
+
+type CartItem = {
+  product: CartProduct;
+  quantity: number;
+};
 
 const steps: {
   id: Step;
@@ -45,6 +62,9 @@ export function CheckoutPage() {
   const [orderNumber, setOrderNumber] = useState("");
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
   const [placeOrderError, setPlaceOrderError] = useState("");
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [cartLoading, setCartLoading] = useState(true);
+  const [cartError, setCartError] = useState("");
 
   const [formData, setFormData] = useState<CheckoutFormData>({
     shipping: {
@@ -65,8 +85,48 @@ export function CheckoutPage() {
     },
   });
 
-  const { items, subtotal, discount, tax, shipping, total, clearCart } = useCart();
   const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchCart = async () => {
+      try {
+        setCartLoading(true);
+        setCartError("");
+
+        const token = localStorage.getItem("token");
+        if (!token) {
+          setCartError("Please login first");
+          return;
+        }
+
+        const response = await userApi.getCart(token);
+
+        const mappedItems = (response.cart || [])
+          .filter((item: any) => item.product)
+          .map((item: any) => ({
+            product: {
+              ...item.product,
+              id: item.product.id || item.product._id,
+            },
+            quantity: item.quantity,
+          }));
+
+        setCartItems(mappedItems);
+      } catch (error: any) {
+        console.error("Failed to load checkout cart:", error.response?.data || error.message);
+        setCartError(error.response?.data?.message || "Failed to load cart");
+      } finally {
+        setCartLoading(false);
+      }
+    };
+
+    if (isAuthenticated) {
+      fetchCart();
+    } else {
+      setCartLoading(false);
+    }
+  }, [isAuthenticated]);
 
   if (!isAuthenticated) {
     return (
@@ -82,9 +142,35 @@ export function CheckoutPage() {
     );
   }
 
-  if (items.length === 0 && currentStep !== "confirmation") {
+  if (cartLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        Loading checkout...
+      </div>
+    );
+  }
+
+  if (cartError) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-red-400">{cartError}</div>
+      </div>
+    );
+  }
+
+  if (cartItems.length === 0 && currentStep !== "confirmation") {
     return <Navigate to="/cart" replace />;
   }
+
+  const subtotal = cartItems.reduce(
+  (sum, item) => sum + item.product.price * item.quantity,
+  0
+  );  
+
+  const discount = 0;
+  const shipping = subtotal > 100 ? 0 : cartItems.length > 0 ? 15 : 0;
+  const tax = subtotal * 0.08;
+  const total = subtotal + shipping + tax - discount;
 
   const formatPrice = (value: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -115,8 +201,8 @@ export function CheckoutPage() {
         return;
       }
 
-      const orderItems = items.map((item) => ({
-        product: item.product.id,
+      const orderItems = cartItems.map((item) => ({
+        product: item.product.id || item.product._id,
         name: item.product.name,
         image: item.product.images?.[0] || "",
         price: item.product.price,
@@ -142,8 +228,12 @@ export function CheckoutPage() {
 
       const createdOrder = await ordersApi.create(orderData, token);
 
+      for (const item of cartItems) {
+        await userApi.removeFromCart(item.product.id || item.product._id, token);
+      }
+
+      setCartItems([]);
       setOrderNumber(createdOrder._id || `ORX-${Date.now().toString(36).toUpperCase()}`);
-      clearCart();
       setCurrentStep("confirmation");
     } catch (error: any) {
       console.error("Order creation failed:", error.response?.data || error.message);
@@ -258,10 +348,10 @@ export function CheckoutPage() {
                       </label>
                       <input
                         type="text"
-                        required
                         value={formData.shipping.firstName}
                         onChange={(e) => updateShipping("firstName", e.target.value)}
-                        className="w-full px-4 py-3 bg-background border border-border rounded-lg text-text-primary focus:outline-none focus:border-primary"
+                        required
+                        className="w-full px-4 py-3 bg-background border border-border rounded-lg text-text-primary"
                       />
                     </div>
 
@@ -271,40 +361,38 @@ export function CheckoutPage() {
                       </label>
                       <input
                         type="text"
-                        required
                         value={formData.shipping.lastName}
                         onChange={(e) => updateShipping("lastName", e.target.value)}
-                        className="w-full px-4 py-3 bg-background border border-border rounded-lg text-text-primary focus:outline-none focus:border-primary"
+                        required
+                        className="w-full px-4 py-3 bg-background border border-border rounded-lg text-text-primary"
                       />
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm text-text-secondary mb-2">
-                        Email
-                      </label>
-                      <input
-                        type="email"
-                        required
-                        value={formData.shipping.email}
-                        onChange={(e) => updateShipping("email", e.target.value)}
-                        className="w-full px-4 py-3 bg-background border border-border rounded-lg text-text-primary focus:outline-none focus:border-primary"
-                      />
-                    </div>
+                  <div>
+                    <label className="block text-sm text-text-secondary mb-2">
+                      Email
+                    </label>
+                    <input
+                      type="email"
+                      value={formData.shipping.email}
+                      onChange={(e) => updateShipping("email", e.target.value)}
+                      required
+                      className="w-full px-4 py-3 bg-background border border-border rounded-lg text-text-primary"
+                    />
+                  </div>
 
-                    <div>
-                      <label className="block text-sm text-text-secondary mb-2">
-                        Phone
-                      </label>
-                      <input
-                        type="tel"
-                        required
-                        value={formData.shipping.phone}
-                        onChange={(e) => updateShipping("phone", e.target.value)}
-                        className="w-full px-4 py-3 bg-background border border-border rounded-lg text-text-primary focus:outline-none focus:border-primary"
-                      />
-                    </div>
+                  <div>
+                    <label className="block text-sm text-text-secondary mb-2">
+                      Phone
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.shipping.phone}
+                      onChange={(e) => updateShipping("phone", e.target.value)}
+                      required
+                      className="w-full px-4 py-3 bg-background border border-border rounded-lg text-text-primary"
+                    />
                   </div>
 
                   <div>
@@ -313,10 +401,10 @@ export function CheckoutPage() {
                     </label>
                     <input
                       type="text"
-                      required
                       value={formData.shipping.address}
                       onChange={(e) => updateShipping("address", e.target.value)}
-                      className="w-full px-4 py-3 bg-background border border-border rounded-lg text-text-primary focus:outline-none focus:border-primary"
+                      required
+                      className="w-full px-4 py-3 bg-background border border-border rounded-lg text-text-primary"
                     />
                   </div>
 
@@ -327,23 +415,22 @@ export function CheckoutPage() {
                       </label>
                       <input
                         type="text"
-                        required
                         value={formData.shipping.city}
                         onChange={(e) => updateShipping("city", e.target.value)}
-                        className="w-full px-4 py-3 bg-background border border-border rounded-lg text-text-primary focus:outline-none focus:border-primary"
+                        required
+                        className="w-full px-4 py-3 bg-background border border-border rounded-lg text-text-primary"
                       />
                     </div>
 
                     <div>
                       <label className="block text-sm text-text-secondary mb-2">
-                        State
+                        State / Country
                       </label>
                       <input
                         type="text"
-                        required
                         value={formData.shipping.state}
                         onChange={(e) => updateShipping("state", e.target.value)}
-                        className="w-full px-4 py-3 bg-background border border-border rounded-lg text-text-primary focus:outline-none focus:border-primary"
+                        className="w-full px-4 py-3 bg-background border border-border rounded-lg text-text-primary"
                       />
                     </div>
 
@@ -353,17 +440,17 @@ export function CheckoutPage() {
                       </label>
                       <input
                         type="text"
-                        required
                         value={formData.shipping.zipCode}
                         onChange={(e) => updateShipping("zipCode", e.target.value)}
-                        className="w-full px-4 py-3 bg-background border border-border rounded-lg text-text-primary focus:outline-none focus:border-primary"
+                        required
+                        className="w-full px-4 py-3 bg-background border border-border rounded-lg text-text-primary"
                       />
                     </div>
                   </div>
 
                   <button
                     type="submit"
-                    className="w-full py-3 bg-primary hover:bg-primary-light text-white font-semibold rounded-lg transition-colors mt-6"
+                    className="mt-4 px-6 py-3 bg-primary text-white rounded-lg font-semibold"
                   >
                     Continue to Payment
                   </button>
@@ -388,39 +475,37 @@ export function CheckoutPage() {
                     </label>
                     <input
                       type="text"
-                      required
-                      placeholder="1234 5678 9012 3456"
                       value={formData.payment.cardNumber}
                       onChange={(e) => updatePayment("cardNumber", e.target.value)}
-                      className="w-full px-4 py-3 bg-background border border-border rounded-lg text-text-primary focus:outline-none focus:border-primary"
+                      required
+                      className="w-full px-4 py-3 bg-background border border-border rounded-lg text-text-primary"
                     />
                   </div>
 
                   <div>
                     <label className="block text-sm text-text-secondary mb-2">
-                      Name on Card
+                      Cardholder Name
                     </label>
                     <input
                       type="text"
-                      required
                       value={formData.payment.cardName}
                       onChange={(e) => updatePayment("cardName", e.target.value)}
-                      className="w-full px-4 py-3 bg-background border border-border rounded-lg text-text-primary focus:outline-none focus:border-primary"
+                      required
+                      className="w-full px-4 py-3 bg-background border border-border rounded-lg text-text-primary"
                     />
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm text-text-secondary mb-2">
-                        Expiry Date
+                        Expiry
                       </label>
                       <input
                         type="text"
-                        required
-                        placeholder="MM/YY"
                         value={formData.payment.expiry}
                         onChange={(e) => updatePayment("expiry", e.target.value)}
-                        className="w-full px-4 py-3 bg-background border border-border rounded-lg text-text-primary focus:outline-none focus:border-primary"
+                        required
+                        className="w-full px-4 py-3 bg-background border border-border rounded-lg text-text-primary"
                       />
                     </div>
 
@@ -430,31 +515,20 @@ export function CheckoutPage() {
                       </label>
                       <input
                         type="text"
-                        required
-                        placeholder="123"
                         value={formData.payment.cvv}
                         onChange={(e) => updatePayment("cvv", e.target.value)}
-                        className="w-full px-4 py-3 bg-background border border-border rounded-lg text-text-primary focus:outline-none focus:border-primary"
+                        required
+                        className="w-full px-4 py-3 bg-background border border-border rounded-lg text-text-primary"
                       />
                     </div>
                   </div>
 
-                  <div className="flex gap-4 mt-6">
-                    <button
-                      type="button"
-                      onClick={() => setCurrentStep("shipping")}
-                      className="flex-1 py-3 border border-border text-text-secondary hover:text-text-primary rounded-lg transition-colors"
-                    >
-                      Back
-                    </button>
-
-                    <button
-                      type="submit"
-                      className="flex-1 py-3 bg-primary hover:bg-primary-light text-white font-semibold rounded-lg transition-colors"
-                    >
-                      Review Order
-                    </button>
-                  </div>
+                  <button
+                    type="submit"
+                    className="mt-4 px-6 py-3 bg-primary text-white rounded-lg font-semibold"
+                  >
+                    Continue to Review
+                  </button>
                 </form>
               </motion.div>
             )}
@@ -463,143 +537,75 @@ export function CheckoutPage() {
               <motion.div
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
-                className="space-y-6"
+                className="bg-surface/50 border border-border rounded-xl p-6"
               >
-                <div className="bg-surface/50 border border-border rounded-xl p-6">
-                  <div className="flex justify-between items-start mb-4">
-                    <h3 className="text-lg font-semibold text-text-primary">
-                      Shipping Address
-                    </h3>
-                    <button
-                      onClick={() => setCurrentStep("shipping")}
-                      className="text-sm text-primary hover:text-primary-light"
-                    >
-                      Edit
-                    </button>
-                  </div>
-
-                  <p className="text-text-secondary">
-                    {formData.shipping.firstName} {formData.shipping.lastName}
-                    <br />
-                    {formData.shipping.address}
-                    <br />
-                    {formData.shipping.city}, {formData.shipping.state}{" "}
-                    {formData.shipping.zipCode}
-                    <br />
-                    {formData.shipping.phone}
-                  </p>
-                </div>
-
-                <div className="bg-surface/50 border border-border rounded-xl p-6">
-                  <div className="flex justify-between items-start mb-4">
-                    <h3 className="text-lg font-semibold text-text-primary">
-                      Payment Method
-                    </h3>
-                    <button
-                      onClick={() => setCurrentStep("payment")}
-                      className="text-sm text-primary hover:text-primary-light"
-                    >
-                      Edit
-                    </button>
-                  </div>
-
-                  <p className="text-text-secondary">
-                    Card ending in {formData.payment.cardNumber.slice(-4)}
-                  </p>
-                </div>
-
-                <div className="bg-surface/50 border border-border rounded-xl p-6">
-                  <h3 className="text-lg font-semibold text-text-primary mb-4">
-                    Order Items
-                  </h3>
-
-                  <div className="space-y-4">
-                    {items.map((item) => (
-                      <div key={item.product.id} className="flex items-center gap-4">
-                        <img
-                          src={item.product.images[0]}
-                          alt={item.product.name}
-                          className="w-16 h-16 object-cover rounded-lg bg-background"
-                        />
-
-                        <div className="flex-1">
-                          <p className="text-text-primary font-medium line-clamp-1">
-                            {item.product.name}
-                          </p>
-                          <p className="text-sm text-text-muted">
-                            Qty: {item.quantity}
-                          </p>
-                        </div>
-
-                        <p className="text-text-primary font-medium">
-                          {formatPrice(item.product.price * item.quantity)}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                <h2 className="text-xl font-semibold text-text-primary mb-6">
+                  Review Your Order
+                </h2>
 
                 {placeOrderError && (
-                  <div className="bg-red-500/10 border border-red-500/20 text-red-400 rounded-lg p-4">
-                    {placeOrderError}
-                  </div>
+                  <div className="mb-4 text-red-400">{placeOrderError}</div>
                 )}
 
-                <div className="flex gap-4">
-                  <button
-                    onClick={() => setCurrentStep("payment")}
-                    className="flex-1 py-3 border border-border text-text-secondary hover:text-text-primary rounded-lg transition-colors"
-                    disabled={isPlacingOrder}
-                  >
-                    Back
-                  </button>
-
-                  <button
-                    onClick={handlePlaceOrder}
-                    disabled={isPlacingOrder}
-                    className="flex-1 py-3 bg-primary hover:bg-primary-light text-white font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isPlacingOrder ? "Placing Order..." : "Place Order"}
-                  </button>
+                <div className="space-y-4 mb-6">
+                  {cartItems.map((item) => (
+                    <div
+                      key={item.product.id || item.product._id}
+                      className="flex items-center justify-between border-b border-border pb-4"
+                    >
+                      <div>
+                        <p className="text-text-primary font-medium">{item.product.name}</p>
+                        <p className="text-sm text-text-secondary">
+                          Qty: {item.quantity}
+                        </p>
+                      </div>
+                      <p className="text-text-primary font-semibold">
+                        {formatPrice(item.product.price * item.quantity)}
+                      </p>
+                    </div>
+                  ))}
                 </div>
+
+                <button
+                  onClick={handlePlaceOrder}
+                  disabled={isPlacingOrder}
+                  className="px-6 py-3 bg-primary text-white rounded-lg font-semibold disabled:opacity-60"
+                >
+                  {isPlacingOrder ? "Placing Order..." : "Place Order"}
+                </button>
               </motion.div>
             )}
 
             {currentStep === "confirmation" && (
               <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="text-center py-12 bg-surface/50 border border-border rounded-xl"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-surface/50 border border-border rounded-xl p-8 text-center"
               >
-                <div className="w-20 h-20 mx-auto bg-green-500/20 rounded-full flex items-center justify-center mb-6">
-                  <CheckIcon className="w-10 h-10 text-green-400" />
-                </div>
-
-                <h2 className="text-3xl font-bold text-text-primary mb-4">
-                  Order Confirmed!
+                <ShieldCheckIcon className="w-16 h-16 text-primary mx-auto mb-4" />
+                <h2 className="text-2xl font-bold text-text-primary mb-2">
+                  Order Placed Successfully
                 </h2>
-
                 <p className="text-text-secondary mb-2">
-                  Thank you for your purchase. Your order has been received.
+                  Your order number is:
+                </p>
+                <p className="text-lg font-semibold text-primary mb-6">
+                  {orderNumber}
                 </p>
 
-                <p className="text-text-primary font-medium mb-8">
-                  Order ID: {orderNumber}
-                </p>
-
-                <div className="flex justify-center gap-4">
+                <div className="flex gap-4 justify-center">
                   <Link
-                    to="/shop"
-                    className="px-6 py-3 bg-primary hover:bg-primary-light text-white font-semibold rounded-lg transition-colors"
+                    to="/profile"
+                    className="px-6 py-3 bg-primary text-white rounded-lg font-semibold"
                   >
-                    Continue Shopping
+                    View Orders
                   </Link>
 
                   <Link
-                    to="/profile"
-                    className="px-6 py-3 border border-border text-text-secondary hover:text-text-primary rounded-lg transition-colors"
+                    to="/shop"
+                    className="px-6 py-3 border border-border rounded-lg font-semibold text-text-primary"
                   >
-                    View Order Status
+                    Continue Shopping
                   </Link>
                 </div>
               </motion.div>
@@ -613,18 +619,27 @@ export function CheckoutPage() {
                   Order Summary
                 </h2>
 
-                <div className="space-y-3 mb-6">
+                <div className="space-y-3">
+                  {cartItems.map((item) => (
+                    <div
+                      key={item.product.id || item.product._id}
+                      className="flex justify-between text-sm"
+                    >
+                      <span className="text-text-secondary">
+                        {item.product.name} × {item.quantity}
+                      </span>
+                      <span className="text-text-primary">
+                        {formatPrice(item.product.price * item.quantity)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="border-t border-border mt-6 pt-4 space-y-3">
                   <div className="flex justify-between text-sm">
                     <span className="text-text-secondary">Subtotal</span>
                     <span className="text-text-primary">{formatPrice(subtotal)}</span>
                   </div>
-
-                  {discount > 0 && (
-                    <div className="flex justify-between text-sm">
-                      <span className="text-green-400">Discount</span>
-                      <span className="text-green-400">-{formatPrice(discount)}</span>
-                    </div>
-                  )}
 
                   <div className="flex justify-between text-sm">
                     <span className="text-text-secondary">Shipping</span>
@@ -634,30 +649,14 @@ export function CheckoutPage() {
                   </div>
 
                   <div className="flex justify-between text-sm">
-                    <span className="text-text-secondary">Tax (8%)</span>
+                    <span className="text-text-secondary">Tax</span>
                     <span className="text-text-primary">{formatPrice(tax)}</span>
                   </div>
 
-                  <div className="border-t border-border pt-3">
-                    <div className="flex justify-between">
-                      <span className="text-lg font-semibold text-text-primary">
-                        Total
-                      </span>
-                      <span className="text-lg font-bold text-primary">
-                        {formatPrice(total)}
-                      </span>
-                    </div>
+                  <div className="flex justify-between text-lg font-bold pt-2 border-t border-border">
+                    <span className="text-text-primary">Total</span>
+                    <span className="text-primary">{formatPrice(total)}</span>
                   </div>
-                </div>
-
-                <div className="mt-6 p-4 bg-background rounded-lg border border-border">
-                  <div className="flex items-center gap-2 text-text-secondary mb-2">
-                    <ShieldCheckIcon className="w-4 h-4 text-green-400" />
-                    <span className="text-sm font-medium">Secure Checkout</span>
-                  </div>
-                  <p className="text-xs text-text-muted">
-                    Your payment information is encrypted and secure.
-                  </p>
                 </div>
               </div>
             </div>
