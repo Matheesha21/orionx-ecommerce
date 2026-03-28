@@ -17,15 +17,18 @@ Keep your responses concise and helpful.
 ## Tool Usage
 You have access to the following tools:
 - **search_products**: Search the product catalog by natural language query, with an optional max_price filter.
+- **get_document_contents**: Search internal documents (policies, FAQs, guides, terms & conditions, shipping info, etc.) for company-related information.
 
 Guidelines for using tools:
 - Use search_products whenever the user asks about products, wants recommendations, comparisons, or anything requiring catalog data.
-- You can call multiple tools in a single turn if needed (up to 3).
+- Use get_document_contents whenever the user asks about store policies, privacy, shipping, returns, refunds, terms of service, or any company-related information.
+- You can call multiple tools in a single turn if needed (up to 3). For example, if the user asks about a product AND the return policy, call both tools at once.
 - If the first search doesn't give you enough information, you may search again with a refined query.
-- Do NOT search if the user is making casual conversation or asking something unrelated to products.
+- Do NOT use any tools if the user is making casual conversation or asking something clearly unrelated.
 - When presenting product results, format them nicely with name, brand, price, and a brief description.
 - If products have a discount, mention it.
-- If no products are found, let the user know and suggest broadening their search.`;
+- When answering from documents, provide clear and helpful answers based on the document content. Do not fabricate policy details.
+- If no results are found, let the user know and suggest broadening their search.`;
 
 /**
  * Looks up a tool by name and executes it with the given arguments.
@@ -98,7 +101,8 @@ export const streamChat = async (
     }
 
     round++;
-    onProgress?.(`Searching for products... (round ${round})`);
+    const toolNames = toolCalls.map((tc) => tc.name).join(", ");
+    onProgress?.(`Using tools: ${toolNames} (round ${round})`);
 
     // Execute all tool calls in parallel
     const toolResults = await Promise.all(toolCalls.map(executeTool));

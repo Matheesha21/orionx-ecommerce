@@ -89,4 +89,6 @@ export const searchProductsTool = new DynamicStructuredTool({
   },
 });
 
-export const tools = [searchProductsTool];
+import { searchDocumentsTool } from "./searchDocuments.js";
+
+export const tools = [searchProductsTool, searchDocumentsTool];
