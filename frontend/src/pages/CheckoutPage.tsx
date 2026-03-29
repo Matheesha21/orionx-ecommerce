@@ -173,11 +173,11 @@ export function CheckoutPage() {
   const total = subtotal + shipping + tax - discount;
 
   const formatPrice = (value: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(value);
-  };
+  return new Intl.NumberFormat("en-LK", {
+    style: "currency",
+    currency: "LKR",
+  }).format(value);
+};
 
   const handleShippingSubmit = (e: React.FormEvent) => {
     e.preventDefault();

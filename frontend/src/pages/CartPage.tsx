@@ -102,11 +102,11 @@ export function CartPage() {
   };
 
   const formatPrice = (value: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(value);
-  };
+  return new Intl.NumberFormat("en-LK", {
+    style: "currency",
+    currency: "LKR",
+  }).format(value);
+};
 
   const subtotal = useMemo(() => {
     return items.reduce((sum, item) => sum + item.product.price * item.quantity, 0);

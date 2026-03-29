@@ -31,11 +31,11 @@ export function PriceDisplay({
     xl: 'text-lg'
   };
   const formatPrice = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(value);
-  };
+  return new Intl.NumberFormat("en-LK", {
+    style: "currency",
+    currency: "LKR",
+  }).format(value);
+};
   return (
     <div className={`flex flex-wrap items-baseline gap-2 ${className}`}>
       <span
