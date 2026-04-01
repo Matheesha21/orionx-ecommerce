@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { Navigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Navigate, Link } from "react-router-dom";
 import {
   UserIcon,
   PackageIcon,
@@ -50,7 +50,10 @@ export function ProfilePage() {
         const data = await ordersApi.getMyOrders(token);
         setOrders(data);
       } catch (error: any) {
-        console.error("Failed to load orders:", error.response?.data || error.message);
+        console.error(
+          "Failed to load orders:",
+          error.response?.data || error.message
+        );
         setOrdersError(error.response?.data?.message || "Failed to load orders");
       } finally {
         setLoadingOrders(false);
@@ -66,15 +69,15 @@ export function ProfilePage() {
     return <Navigate to="/login" replace />;
   }
 
-  const formatPrice = (value: number) => {
-  return new Intl.NumberFormat("en-LK", {
-    style: "currency",
-    currency: "LKR",
-  }).format(value);
-};
-
   const formatDate = (date: string) => {
     return new Date(date).toLocaleDateString();
+  };
+
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+    }).format(price);
   };
 
   return (
@@ -106,7 +109,9 @@ export function ProfilePage() {
                 )}
 
                 <div>
-                  <h2 className="text-lg font-bold text-text-primary">{user.name}</h2>
+                  <h2 className="text-lg font-bold text-text-primary">
+                    {user.name}
+                  </h2>
                   <p className="text-sm text-text-muted">{user.email}</p>
                 </div>
               </div>
@@ -293,6 +298,13 @@ export function ProfilePage() {
                           {order.isDelivered ? "Delivered" : "Not Delivered"}
                         </span>
                       </div>
+
+                      <Link
+                        to={`/orders/${order._id}`}
+                        className="inline-flex mt-3 px-4 py-2 rounded-lg bg-primary text-white text-sm font-medium hover:opacity-90 transition"
+                      >
+                        View Details
+                      </Link>
                     </div>
                   ))}
                 </div>

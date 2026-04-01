@@ -6,6 +6,7 @@ import { WishlistProvider } from './context/WishlistContext';
 import { CompareProvider } from './context/CompareContext';
 import { Layout } from './components/layout/Layout';
 // Pages
+
 import { HomePage } from './pages/HomePage';
 import { ShopPage } from './pages/ShopPage';
 import { ProductDetailPage } from './pages/ProductDetailPage';
@@ -16,6 +17,7 @@ import { ComparePage } from './pages/ComparePage';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { ProfilePage } from './pages/ProfilePage';
+import { OrderDetailsPage } from './pages/OrderDetailsPage';
 import { AdminDashboardPage } from './pages/AdminDashboardPage';
 import { AboutPage } from './pages/AboutPage';
 import { ContactPage } from './pages/ContactPage';
@@ -45,6 +47,7 @@ export function App() {
                   <Route path="/login" element={<LoginPage />} />
                   <Route path="/register" element={<RegisterPage />} />
                   <Route path="/profile" element={<ProfilePage />} />
+                  <Route path="/orders/:id" element={<OrderDetailsPage />} />
                   <Route path="/admin" element={<AdminDashboardPage />} />
                   <Route path="/about" element={<AboutPage />} />
                   <Route path="/contact" element={<ContactPage />} />
