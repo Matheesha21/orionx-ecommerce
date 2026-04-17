@@ -10,11 +10,13 @@ import {
   ShieldCheckIcon,
   RefreshCwIcon,
   CheckIcon,
+  StarIcon,
 } from "lucide-react";
 import { productsApi } from "../services/productService";
 import { userApi } from "../services/userService";
 import { useApi } from "../hooks/useApi";
 import { useCompare } from "../context/CompareContext";
+import { useAuth } from "../context/AuthContext";
 import { Breadcrumb } from "../components/ui/Breadcrumb";
 import { RatingStars } from "../components/ui/RatingStars";
 import { PriceDisplay } from "../components/ui/PriceDisplay";
@@ -22,9 +24,18 @@ import { Badge } from "../components/ui/Badge";
 
 type TabType = "description" | "specs" | "reviews";
 
+type Review = {
+  _id?: string;
+  name?: string;
+  rating?: number;
+  comment?: string;
+  createdAt?: string;
+};
+
 export function ProductDetailPage() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
 
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
@@ -33,6 +44,11 @@ export function ProductDetailPage() {
   const [actionError, setActionError] = useState("");
   const [addingToCart, setAddingToCart] = useState(false);
   const [addingToWishlist, setAddingToWishlist] = useState(false);
+
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewComment, setReviewComment] = useState("");
+  const [reviewMessage, setReviewMessage] = useState("");
+  const [reviewError, setReviewError] = useState("");
 
   const { addItem: addToCompare, isInCompare, canAdd } = useCompare();
 
@@ -49,7 +65,11 @@ export function ProductDetailPage() {
     return {
       ...p,
       id: p.id || p._id,
-      images: Array.isArray(p.images) && p.images.length > 0 ? p.images : ["/placeholder-product.png"],
+      images:
+        Array.isArray(p.images) && p.images.length > 0
+          ? p.images
+          : ["/placeholder-product.png"],
+      reviews: Array.isArray(p.reviews) ? p.reviews : [],
     };
   }, [productResponse]);
 
@@ -117,6 +137,58 @@ export function ProductDetailPage() {
       setActionError(err.response?.data?.message || "Failed to add to wishlist");
     } finally {
       setAddingToWishlist(false);
+    }
+  };
+
+  const handleReviewSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setReviewMessage("");
+    setReviewError("");
+
+    if (!isAuthenticated) {
+      navigate("/login");
+      return;
+    }
+
+    if (!reviewComment.trim()) {
+      setReviewError("Please write a review comment.");
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        navigate("/login");
+        return;
+      }
+
+      const response = await fetch(
+        `${(import.meta as any).env.VITE_API_URL || "http://localhost:3000"}/api/products/${product.id}/reviews`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            rating: reviewRating,
+            comment: reviewComment,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw await response.json();
+      }
+
+      setReviewMessage("Review submitted successfully.");
+      setReviewComment("");
+      setReviewRating(5);
+
+      window.location.reload();
+    } catch (err: any) {
+      setReviewError(err.response?.data?.message || "Failed to submit review");
     }
   };
 
@@ -310,7 +382,9 @@ export function ProductDetailPage() {
                           className="flex justify-between border-b border-border py-2"
                         >
                           <span className="font-medium">{key}</span>
-                          <span className="text-text-secondary">{String(value)}</span>
+                          <span className="text-text-secondary">
+                            {String(value)}
+                          </span>
                         </div>
                       ))}
                   </div>
@@ -318,11 +392,121 @@ export function ProductDetailPage() {
               )}
 
               {activeTab === "reviews" && (
-                <div>
-                  <h2 className="text-xl font-semibold mb-3">Reviews</h2>
-                  <p className="text-text-secondary">
-                    Reviews section coming next.
-                  </p>
+                <div className="space-y-8">
+                  <div>
+                    <h2 className="text-xl font-semibold mb-3">Customer Reviews</h2>
+
+                    {product.reviews.length === 0 ? (
+                      <p className="text-text-secondary">
+                        No reviews yet. Be the first to review this product.
+                      </p>
+                    ) : (
+                      <div className="space-y-4">
+                        {product.reviews.map((review: Review, index: number) => (
+                          <div
+                            key={review._id || index}
+                            className="rounded-xl border border-border bg-surface/50 p-4"
+                          >
+                            <div className="flex items-center justify-between gap-4 mb-2">
+                              <div>
+                                <p className="font-medium text-text-primary">
+                                  {review.name || "Customer"}
+                                </p>
+                                <div className="mt-1">
+                                  <RatingStars rating={review.rating || 0} />
+                                </div>
+                              </div>
+
+                              {review.createdAt && (
+                                <p className="text-sm text-text-secondary">
+                                  {new Date(review.createdAt).toLocaleDateString()}
+                                </p>
+                              )}
+                            </div>
+
+                            <p className="text-text-secondary">
+                              {review.comment || "No comment provided."}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="rounded-xl border border-border bg-surface/50 p-5">
+                    <h3 className="text-lg font-semibold mb-4">Write a Review</h3>
+
+                    {!isAuthenticated ? (
+                      <p className="text-text-secondary">
+                        Please{" "}
+                        <button
+                          onClick={() => navigate("/login")}
+                          className="text-primary font-medium"
+                        >
+                          sign in
+                        </button>{" "}
+                        to write a review.
+                      </p>
+                    ) : (
+                      <form onSubmit={handleReviewSubmit} className="space-y-4">
+                        <div>
+                          <label className="block text-sm font-medium mb-2">
+                            Rating
+                          </label>
+                          <div className="flex gap-2">
+                            {[1, 2, 3, 4, 5].map((value) => (
+                              <button
+                                key={value}
+                                type="button"
+                                onClick={() => setReviewRating(value)}
+                                className="p-1"
+                              >
+                                <StarIcon
+                                  className={`w-5 h-5 ${
+                                    value <= reviewRating
+                                      ? "fill-primary text-primary"
+                                      : "text-text-muted"
+                                  }`}
+                                />
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium mb-2">
+                            Comment
+                          </label>
+                          <textarea
+                            value={reviewComment}
+                            onChange={(e) => setReviewComment(e.target.value)}
+                            rows={4}
+                            placeholder="Share your experience with this product..."
+                            className="w-full px-4 py-3 bg-background border border-border rounded-lg text-text-primary focus:outline-none focus:border-primary"
+                          />
+                        </div>
+
+                        {reviewMessage && (
+                          <div className="rounded-lg border border-green-500/20 bg-green-500/10 p-3 text-green-400 text-sm">
+                            {reviewMessage}
+                          </div>
+                        )}
+
+                        {reviewError && (
+                          <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-red-400 text-sm">
+                            {reviewError}
+                          </div>
+                        )}
+
+                        <button
+                          type="submit"
+                          className="px-5 py-3 rounded-lg bg-primary text-white font-medium hover:opacity-90 transition"
+                        >
+                          Submit Review
+                        </button>
+                      </form>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
