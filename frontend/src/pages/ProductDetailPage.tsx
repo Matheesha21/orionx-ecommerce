@@ -164,7 +164,7 @@ export function ProductDetailPage() {
       }
 
       const response = await fetch(
-        `${(import.meta as any).env.VITE_API_URL || "http://localhost:3000"}/api/products/${product.id}/reviews`,
+        `${(import.meta as any).env.VITE_API_URL || "http://localhost:5050"}/api/products/${product.id}/reviews`,
         {
           method: "POST",
           headers: {
