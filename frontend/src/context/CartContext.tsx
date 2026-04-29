@@ -1,266 +1,139 @@
-import React, { useEffect, createContext, useContext, useReducer } from 'react';
-import { Product, CartItem, CouponCode } from '../types';
-import { validateCoupon } from '../data/products';
-interface CartState {
-  items: CartItem[];
-  appliedCoupon: CouponCode | null;
-}
-type CartAction =
-{
-  type: 'ADD_ITEM';
-  payload: Product;
-} |
-{
-  type: 'REMOVE_ITEM';
-  payload: string;
-} |
-{
-  type: 'UPDATE_QUANTITY';
-  payload: {
-    productId: string;
-    quantity: number;
-  };
-} |
-{
-  type: 'CLEAR_CART';
-} |
-{
-  type: 'APPLY_COUPON';
-  payload: CouponCode;
-} |
-{
-  type: 'REMOVE_COUPON';
-} |
-{
-  type: 'LOAD_CART';
-  payload: CartState;
-};
+import React, { createContext, useContext, useEffect, useState } from "react";
+import { Product, CartItem } from "../types";
+import { userApi } from "../services/userService";
+
 interface CartContextType {
   items: CartItem[];
-  appliedCoupon: CouponCode | null;
-  addItem: (product: Product) => void;
-  removeItem: (productId: string) => void;
-  updateQuantity: (productId: string, quantity: number) => void;
+  addItem: (product: Product, quantity?: number) => Promise<void>;
+  removeItem: (productId: string) => Promise<void>;
+  updateQuantity: (productId: string, quantity: number) => Promise<void>;
   clearCart: () => void;
-  applyCoupon: (code: string) => {
-    success: boolean;
-    message: string;
-  };
-  removeCoupon: () => void;
+  isInCart: (productId: string) => boolean;
   itemCount: number;
   subtotal: number;
-  discount: number;
-  tax: number;
   shipping: number;
+  tax: number;
+  discount: number;
   total: number;
+  loading: boolean;
+  refreshCart: () => Promise<void>;
 }
-const CartContext = createContext<CartContextType | undefined>(undefined);
-const cartReducer = (state: CartState, action: CartAction): CartState => {
-  switch (action.type) {
-    case 'ADD_ITEM':{
-        const existingItem = state.items.find(
-          (item) => item.product.id === action.payload.id
-        );
-        if (existingItem) {
-          return {
-            ...state,
-            items: state.items.map((item) =>
-            item.product.id === action.payload.id ?
-            {
-              ...item,
-              quantity: item.quantity + 1
-            } :
-            item
-            )
-          };
-        }
-        return {
-          ...state,
-          items: [
-          ...state.items,
-          {
-            product: action.payload,
-            quantity: 1
-          }]
 
-        };
+const CartContext = createContext<CartContextType | undefined>(undefined);
+
+export function CartProvider({ children }: { children: React.ReactNode }) {
+  const [items, setItems] = useState<CartItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchCart = async () => {
+    try {
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        setItems([]);
+        return;
       }
-    case 'REMOVE_ITEM':
-      return {
-        ...state,
-        items: state.items.filter((item) => item.product.id !== action.payload)
-      };
-    case 'UPDATE_QUANTITY':
-      if (action.payload.quantity <= 0) {
-        return {
-          ...state,
-          items: state.items.filter(
-            (item) => item.product.id !== action.payload.productId
-          )
-        };
-      }
-      return {
-        ...state,
-        items: state.items.map((item) =>
-        item.product.id === action.payload.productId ?
-        {
-          ...item,
-          quantity: action.payload.quantity
-        } :
-        item
-        )
-      };
-    case 'CLEAR_CART':
-      return {
-        items: [],
-        appliedCoupon: null
-      };
-    case 'APPLY_COUPON':
-      return {
-        ...state,
-        appliedCoupon: action.payload
-      };
-    case 'REMOVE_COUPON':
-      return {
-        ...state,
-        appliedCoupon: null
-      };
-    case 'LOAD_CART':
-      return action.payload;
-    default:
-      return state;
-  }
-};
-const CART_STORAGE_KEY = 'orionx-cart';
-export function CartProvider({ children }: {children: ReactNode;}) {
-  const [state, dispatch] = useReducer(cartReducer, {
-    items: [],
-    appliedCoupon: null
-  });
-  // Load cart from localStorage on mount
-  useEffect(() => {
-    const savedCart = localStorage.getItem(CART_STORAGE_KEY);
-    if (savedCart) {
-      try {
-        const parsed = JSON.parse(savedCart);
-        dispatch({
-          type: 'LOAD_CART',
-          payload: parsed
-        });
-      } catch (e) {
-        console.error('Failed to load cart from localStorage');
-      }
+
+      const response = await userApi.getCart(token);
+
+      const mappedItems = (response.cart || [])
+        .filter((item: any) => item.product)
+        .map((item: any) => ({
+          product: {
+            ...item.product,
+            id: item.product.id || item.product._id,
+          },
+          quantity: item.quantity,
+        }));
+
+      setItems(mappedItems);
+    } catch (error) {
+      console.error("Failed to load cart");
+      setItems([]);
+    } finally {
+      setLoading(false);
     }
+  };
+
+  useEffect(() => {
+    fetchCart();
   }, []);
-  // Save cart to localStorage on change
-  useEffect(() => {
-    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(state));
-  }, [state]);
-  const addItem = (product: Product) => {
-    dispatch({
-      type: 'ADD_ITEM',
-      payload: product
-    });
+
+  const addItem = async (product: Product, quantity = 1) => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    await userApi.addToCart(product.id, quantity, token);
+    await fetchCart();
   };
-  const removeItem = (productId: string) => {
-    dispatch({
-      type: 'REMOVE_ITEM',
-      payload: productId
-    });
+
+  const removeItem = async (productId: string) => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    await userApi.removeFromCart(productId, token);
+    await fetchCart();
   };
-  const updateQuantity = (productId: string, quantity: number) => {
-    dispatch({
-      type: 'UPDATE_QUANTITY',
-      payload: {
-        productId,
-        quantity
-      }
-    });
+
+  const updateQuantity = async (productId: string, quantity: number) => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    if (quantity <= 0) {
+      await removeItem(productId);
+      return;
+    }
+
+    await userApi.updateCartItem(productId, quantity, token);
+    await fetchCart();
   };
+
   const clearCart = () => {
-    dispatch({
-      type: 'CLEAR_CART'
-    });
+    setItems([]);
   };
-  const applyCoupon = (
-  code: string)
-  : {
-    success: boolean;
-    message: string;
-  } => {
-    const coupon = validateCoupon(code);
-    if (!coupon) {
-      return {
-        success: false,
-        message: 'Invalid coupon code'
-      };
-    }
-    if (coupon.minPurchase && subtotal < coupon.minPurchase) {
-      return {
-        success: false,
-        message: `Minimum purchase of $${coupon.minPurchase} required`
-      };
-    }
-    dispatch({
-      type: 'APPLY_COUPON',
-      payload: coupon
-    });
-    return {
-      success: true,
-      message: 'Coupon applied successfully!'
-    };
+
+  const isInCart = (productId: string) => {
+    return items.some((item) => item.product.id === productId);
   };
-  const removeCoupon = () => {
-    dispatch({
-      type: 'REMOVE_COUPON'
-    });
-  };
-  const itemCount = state.items.reduce((sum, item) => sum + item.quantity, 0);
-  const subtotal = state.items.reduce(
+
+  const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
+  const subtotal = items.reduce(
     (sum, item) => sum + item.product.price * item.quantity,
     0
   );
-  const discount = state.appliedCoupon ?
-  state.appliedCoupon.discountType === 'percentage' ?
-  Math.min(
-    subtotal * state.appliedCoupon.discountValue / 100,
-    state.appliedCoupon.maxDiscount || Infinity
-  ) :
-  state.appliedCoupon.discountValue :
-  0;
-  const TAX_RATE = 0.08;
-  const FREE_SHIPPING_THRESHOLD = 100;
-  const SHIPPING_COST = 9.99;
-  const tax = (subtotal - discount) * TAX_RATE;
-  const shipping = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_COST;
-  const total = subtotal - discount + tax + shipping;
+  const discount = 0;
+  const shipping = subtotal > 0 ? 0 : 0;
+  const tax = subtotal * 0.08;
+  const total = subtotal + shipping + tax - discount;
+
   return (
     <CartContext.Provider
       value={{
-        items: state.items,
-        appliedCoupon: state.appliedCoupon,
+        items,
         addItem,
         removeItem,
         updateQuantity,
         clearCart,
-        applyCoupon,
-        removeCoupon,
+        isInCart,
         itemCount,
         subtotal,
-        discount,
-        tax,
         shipping,
-        total
-      }}>
-
+        tax,
+        discount,
+        total,
+        loading,
+        refreshCart: fetchCart,
+      }}
+    >
       {children}
-    </CartContext.Provider>);
-
+    </CartContext.Provider>
+  );
 }
+
 export function useCart() {
   const context = useContext(CartContext);
-  if (context === undefined) {
-    throw new Error('useCart must be used within a CartProvider');
+  if (!context) {
+    throw new Error("useCart must be used within a CartProvider");
   }
   return context;
 }
