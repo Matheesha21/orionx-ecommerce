@@ -221,7 +221,7 @@ export function AdminDashboardPage() {
                     </tr>
                   </thead>
                   <tbody className="text-sm">
-                    {orders.slice(0, 5).map((order) => (
+                    {orders.map((order) => (
                       <tr
                         key={order._id}
                         className="border-b border-border/50 last:border-0"
@@ -256,7 +256,7 @@ export function AdminDashboardPage() {
                           </span>
                         </td>
                         <td className="py-4 text-text-primary font-medium text-right">
-                          ${order.totalPrice}
+                          LKR {order.totalPrice.toLocaleString()}
                         </td>
                         <td className="py-4 text-center space-x-2">
                           {!order.isPaid && (
