@@ -25,6 +25,10 @@ interface AuthContextType {
     success: boolean;
     message: string;
   }>;
+  loginWithGoogle: (credential: string) => Promise<{
+    success: boolean;
+    message: string;
+  }>;
   logout: () => void;
   updateUser: (updates: Partial<AuthUser>) => void;
 }
@@ -69,7 +73,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       const data = response.data;
-
       const normalizedUser: AuthUser = {
         id: data.user.id,
         name: data.user.username,
@@ -119,6 +122,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const loginWithGoogle = async (
+    credential: string
+  ): Promise<{ success: boolean; message: string }> => {
+    try {
+      const response = await axios.post(`${API_BASE_URL}/users/google-login`, {
+        credential,
+      });
+
+      const data = response.data;
+      const normalizedUser: AuthUser = {
+        id: data.user.id,
+        name: data.user.username,
+        email: data.user.email,
+        role: data.user.isAdmin ? "admin" : "customer",
+        isAdmin: data.user.isAdmin,
+        addresses: [],
+        createdAt: new Date().toISOString(),
+      };
+
+      localStorage.setItem(TOKEN_STORAGE_KEY, data.token);
+      setUser(normalizedUser);
+
+      return {
+        success: true,
+        message: data.message || "Login successful!",
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message:
+          error.response?.data?.message || "Google login failed",
+      };
+    }
+  };
+
   const logout = () => {
     setUser(null);
     localStorage.removeItem(TOKEN_STORAGE_KEY);
@@ -145,6 +183,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isAdmin,
         login,
         register,
+        loginWithGoogle,
         logout,
         updateUser,
       }}

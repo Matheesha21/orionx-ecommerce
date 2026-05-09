@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import {
@@ -28,8 +28,62 @@ export function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { register } = useAuth();
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const googleButtonRef = useRef<HTMLDivElement | null>(null);
+  const googleReadyRef = useRef(false);
+  const { register, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
+  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID as string;
+
+  const initGoogle = () => {
+    if (googleReadyRef.current) {
+      return true;
+    }
+
+    const google = (window as any).google;
+    if (!google?.accounts?.id || !googleClientId) {
+      return false;
+    }
+
+    google.accounts.id.initialize({
+      client_id: googleClientId,
+      ux_mode: 'popup',
+      callback: async (response: { credential: string }) => {
+        setIsGoogleLoading(true);
+        const result = await loginWithGoogle(response.credential);
+        setIsGoogleLoading(false);
+
+        if (result.success) {
+          navigate('/');
+        } else {
+          setError(result.message || 'Google login failed');
+        }
+      },
+    });
+
+    if (googleButtonRef.current) {
+      google.accounts.id.renderButton(googleButtonRef.current, {
+        theme: 'outline',
+        size: 'large',
+        width: 320,
+      });
+    }
+
+    googleReadyRef.current = true;
+    return true;
+  };
+
+  useEffect(() => {
+    if (!googleClientId) {
+      return;
+    }
+
+    const timeout = window.setTimeout(() => {
+      initGoogle();
+    }, 0);
+
+    return () => window.clearTimeout(timeout);
+  }, [googleClientId]);
   const handleSendOtp = async () => {
     if (!email) {
       setError('Please enter your email first');
@@ -98,6 +152,31 @@ export function RegisterPage() {
       setError(result.message);
     }
   };
+  const handleGoogleLogin = () => {
+    setError('');
+
+    if (!googleClientId) {
+      setError('Google login is not configured');
+      return;
+    }
+
+    const ready = initGoogle();
+    if (!ready) {
+      setError('Google login is not ready yet');
+      return;
+    }
+
+    const button = googleButtonRef.current?.querySelector(
+      'div[role="button"]'
+    ) as HTMLDivElement | null;
+
+    if (button) {
+      button.click();
+    } else {
+      const google = (window as any).google;
+      google?.accounts?.id?.prompt();
+    }
+  };
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-4 py-16">
       {/* Background Effects */}
@@ -149,8 +228,14 @@ export function RegisterPage() {
           {step === 'details' &&
           <form className="space-y-5">
               <div className="space-y-4">
+                <div
+                  ref={googleButtonRef}
+                  className="absolute -left-[9999px] -top-[9999px]"
+                />
                 <button
                   type="button"
+                  onClick={handleGoogleLogin}
+                  disabled={isGoogleLoading}
                   className="w-full py-3 rounded-lg border border-border bg-background text-text-primary font-semibold hover:bg-surface-elevated transition-colors">
 
                   <img
@@ -158,7 +243,7 @@ export function RegisterPage() {
                     alt="Google"
                     className="inline-block w-5 h-5 mr-3"
                   />
-                  Continue with Google
+                  {isGoogleLoading ? 'Connecting...' : 'Continue with Google'}
                 </button>
                 <div className="flex items-center gap-3">
                   <div className="h-px flex-1 bg-border" />

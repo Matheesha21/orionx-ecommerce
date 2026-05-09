@@ -4,6 +4,7 @@ import { protect } from "../middleware/authMiddleware.js"; // Added .js
 import {
   registerUser,
   loginUser,
+  googleLogin,
   requestEmailOtp,
   verifyEmailOtp,
   addToCart,
@@ -20,6 +21,7 @@ router.post("/request-otp", requestEmailOtp);
 router.post("/verify-otp", verifyEmailOtp);
 router.post("/register", registerUser);
 router.post("/login", loginUser);
+router.post("/google-login", googleLogin);
 
 // Cart
 router.post("/cart", protect, addToCart);
