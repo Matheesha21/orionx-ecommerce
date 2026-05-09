@@ -2,7 +2,6 @@ import React from 'react';
 import { Navbar } from './Navbar';
 import { Footer } from './Footer';
 import { CompareDrawer } from '../features/CompareDrawer';
-import { AgentChatWidget } from "../features/AgentChatWidget";
 interface LayoutProps {
   children: React.ReactNode;
 }
@@ -13,7 +12,6 @@ export function Layout({ children }: LayoutProps) {
       <main className="flex-1 pt-16 md:pt-20">{children}</main>
       <Footer />
       <CompareDrawer />
-      <AgentChatWidget />
     </div>);
 
 }
