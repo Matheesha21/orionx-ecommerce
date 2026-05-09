@@ -43,15 +43,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
 
   useEffect(() => {
-    const savedAuth = localStorage.getItem(AUTH_STORAGE_KEY);
-    if (savedAuth) {
-      try {
-        const parsed = JSON.parse(savedAuth);
-        setUser(parsed);
-      } catch (e) {
-        console.error("Failed to load auth from localStorage");
+    const validateSession = async () => {
+      const token = localStorage.getItem(TOKEN_STORAGE_KEY);
+
+      if (!token) {
+        setUser(null);
+        return;
       }
-    }
+
+      try {
+        const response = await axios.get(`${API_BASE_URL}/users/profile`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        const data = response.data;
+        const normalizedUser: AuthUser = {
+          id: data.user.id,
+          name: data.user.username,
+          email: data.user.email,
+          authType: data.user.authType || "EMAIL",
+          role: data.user.isAdmin ? "admin" : "customer",
+          isAdmin: data.user.isAdmin,
+          addresses: [],
+          createdAt: new Date().toISOString(),
+        };
+
+        setUser(normalizedUser);
+      } catch (error) {
+        setUser(null);
+        localStorage.removeItem(TOKEN_STORAGE_KEY);
+        localStorage.removeItem(AUTH_STORAGE_KEY);
+      }
+    };
+
+    validateSession();
   }, []);
 
   useEffect(() => {

@@ -219,6 +219,30 @@ export const loginUser = async (req, res) => {
   }
 };
 
+// @desc    Get current user profile
+export const getProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).select("-password");
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.json({
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        authType: user.authType,
+        isEmailVerified: user.isEmailVerified,
+        isAdmin: user.isAdmin,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 // @desc    Google login/signup
 export const googleLogin = async (req, res) => {
   try {
