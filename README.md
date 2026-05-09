@@ -1,6 +1,6 @@
 # OrionX E-Commerce Platform
 
-A full-stack e-commerce platform with an AI-powered shopping assistant. OrionX lets customers browse products, manage their cart and wishlist, place orders — and chat with an intelligent agent that can search the catalog, answer policy questions, and manage their shopping session conversationally.
+A full-stack e-commerce called OrionX lets customers browse products, manage their cart and wishlist and place orders.
 
 ![OrionX Web UI](frontend/public/web_ui.png)
 

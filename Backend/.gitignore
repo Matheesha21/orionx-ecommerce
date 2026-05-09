@@ -2,16 +2,15 @@
 node_modules
 /node_modules
 
-# Environment Variables (CRITICAL for security)
+# Environment variables
 .env
 .env.local
 
-# Mac System files
+# Mac system files
 .DS_Store
 
 # Build outputs
-dist
-dist-ssr
+/dist
 
 # Logs
 npm-debug.log*
