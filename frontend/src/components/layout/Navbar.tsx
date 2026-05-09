@@ -36,6 +36,7 @@ export function Navbar() {
 
   const location = useLocation();
   const { user, isAuthenticated, isAdmin, logout } = useAuth();
+  const userInitial = (user?.name || "").trim().charAt(0).toUpperCase();
 
   const fetchCounts = async () => {
     try {
@@ -153,12 +154,10 @@ export function Navbar() {
                 className="flex items-center gap-2 p-2 text-text-secondary hover:text-text-primary transition-colors"
                 aria-label="User menu"
               >
-                {user?.avatar ? (
-                  <img
-                    src={user.avatar}
-                    alt={user.name}
-                    className="w-6 h-6 md:w-8 md:h-8 rounded-full object-cover"
-                  />
+                {isAuthenticated ? (
+                  <div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-primary text-white flex items-center justify-center text-xs md:text-sm font-semibold">
+                    {userInitial || "U"}
+                  </div>
                 ) : (
                   <UserIcon className="w-5 h-5 md:w-6 md:h-6" />
                 )}
