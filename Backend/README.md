@@ -64,35 +64,13 @@ cd backend
 npm install
 ```
 
+
 ### Environment Variables
 
-Create a `.env` file in the `backend/` directory:
-
-```env
-# Server
-PORT=5050
-
-# MongoDB
-MONGO_URI=mongodb+srv://<user>:<password>@cluster.mongodb.net/<dbname>
-
-# JWT
-JWT_SECRET=your_jwt_secret_key
-
-# Cloudinary
-CLOUDINARY_CLOUD_NAME=your_cloud_name
-CLOUDINARY_API_KEY=your_api_key
-CLOUDINARY_API_SECRET=your_api_secret
-
-# Gemini AI
-GEMINI_API_KEY=your_gemini_api_key
-GEMINI_MODEL=gemini-2.5-flash
-
-# PostgreSQL (Vector DB)
-PG_HOST=localhost
-PG_PORT=5432
-PG_USER=your_pg_user
-PG_PASSWORD=your_pg_password
-PG_DATABASE=rag_db
+Copy `.env.example` to `.env` and fill in your values:
+```bash
+cp .env.example .env
+# Then edit .env with your secrets
 ```
 
 ### Run
