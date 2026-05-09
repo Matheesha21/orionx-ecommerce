@@ -25,6 +25,10 @@ interface AuthContextType {
     success: boolean;
     message: string;
   }>;
+  loginWithGoogle: (credential: string) => Promise<{
+    success: boolean;
+    message: string;
+  }>;
   logout: () => void;
   updateUser: (updates: Partial<AuthUser>) => void;
 }
@@ -39,15 +43,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
 
   useEffect(() => {
-    const savedAuth = localStorage.getItem(AUTH_STORAGE_KEY);
-    if (savedAuth) {
-      try {
-        const parsed = JSON.parse(savedAuth);
-        setUser(parsed);
-      } catch (e) {
-        console.error("Failed to load auth from localStorage");
+    const validateSession = async () => {
+      const token = localStorage.getItem(TOKEN_STORAGE_KEY);
+
+      if (!token) {
+        setUser(null);
+        return;
       }
-    }
+
+      try {
+        const response = await axios.get(`${API_BASE_URL}/users/profile`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        const data = response.data;
+        const normalizedUser: AuthUser = {
+          id: data.user.id,
+          name: data.user.username,
+          email: data.user.email,
+          authType: data.user.authType || "EMAIL",
+          role: data.user.isAdmin ? "admin" : "customer",
+          isAdmin: data.user.isAdmin,
+          addresses: [],
+          createdAt: new Date().toISOString(),
+        };
+
+        setUser(normalizedUser);
+      } catch (error) {
+        setUser(null);
+        localStorage.removeItem(TOKEN_STORAGE_KEY);
+        localStorage.removeItem(AUTH_STORAGE_KEY);
+      }
+    };
+
+    validateSession();
   }, []);
 
   useEffect(() => {
@@ -69,11 +100,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       const data = response.data;
-
       const normalizedUser: AuthUser = {
         id: data.user.id,
         name: data.user.username,
         email: data.user.email,
+        authType: data.user.authType || "EMAIL",
         role: data.user.isAdmin ? "admin" : "customer",
         isAdmin: data.user.isAdmin,
         addresses: [],
@@ -119,6 +150,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const loginWithGoogle = async (
+    credential: string
+  ): Promise<{ success: boolean; message: string }> => {
+    try {
+      const response = await axios.post(`${API_BASE_URL}/users/google-login`, {
+        credential,
+      });
+
+      const data = response.data;
+      const normalizedUser: AuthUser = {
+        id: data.user.id,
+        name: data.user.username,
+        email: data.user.email,
+        authType: data.user.authType || "EMAIL",
+        role: data.user.isAdmin ? "admin" : "customer",
+        isAdmin: data.user.isAdmin,
+        addresses: [],
+        createdAt: new Date().toISOString(),
+      };
+
+      localStorage.setItem(TOKEN_STORAGE_KEY, data.token);
+      setUser(normalizedUser);
+
+      return {
+        success: true,
+        message: data.message || "Login successful!",
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message:
+          error.response?.data?.message || "Google login failed",
+      };
+    }
+  };
+
   const logout = () => {
     setUser(null);
     localStorage.removeItem(TOKEN_STORAGE_KEY);
@@ -145,6 +212,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isAdmin,
         login,
         register,
+        loginWithGoogle,
         logout,
         updateUser,
       }}

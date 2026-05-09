@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import {
   UserIcon,
   MailIcon,
@@ -10,21 +11,130 @@ import {
 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
-const LOGO_URL = "/WhatsApp_Image_2025-08-21_at_12.50.56_(1).jpg";
+const LOGO_URL = "/logo.jpg";
+const API_BASE_URL = "http://127.0.0.1:5050/api";
 
 export function RegisterPage() {
+  const [step, setStep] = useState<'details' | 'otp' | 'password'>('details');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [otp, setOtp] = useState('');
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpVerified, setOtpVerified] = useState(false);
+  const [otpStatus, setOtpStatus] = useState('');
+  const [otpLoading, setOtpLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { register } = useAuth();
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const googleButtonRef = useRef<HTMLDivElement | null>(null);
+  const googleReadyRef = useRef(false);
+  const { register, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
+  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID as string;
+
+  const initGoogle = () => {
+    if (googleReadyRef.current) {
+      return true;
+    }
+
+    const google = (window as any).google;
+    if (!google?.accounts?.id || !googleClientId) {
+      return false;
+    }
+
+    google.accounts.id.initialize({
+      client_id: googleClientId,
+      ux_mode: 'popup',
+      callback: async (response: { credential: string }) => {
+        setIsGoogleLoading(true);
+        const result = await loginWithGoogle(response.credential);
+        setIsGoogleLoading(false);
+
+        if (result.success) {
+          navigate('/');
+        } else {
+          setError(result.message || 'Google login failed');
+        }
+      },
+    });
+
+    if (googleButtonRef.current) {
+      google.accounts.id.renderButton(googleButtonRef.current, {
+        theme: 'outline',
+        size: 'large',
+        width: 320,
+      });
+    }
+
+    googleReadyRef.current = true;
+    return true;
+  };
+
+  useEffect(() => {
+    if (!googleClientId) {
+      return;
+    }
+
+    const timeout = window.setTimeout(() => {
+      initGoogle();
+    }, 0);
+
+    return () => window.clearTimeout(timeout);
+  }, [googleClientId]);
+  const handleSendOtp = async () => {
+    if (!email) {
+      setError('Please enter your email first');
+      return;
+    }
+
+    setError('');
+    setOtpStatus('');
+    setOtpLoading(true);
+
+    try {
+      await axios.post(`${API_BASE_URL}/users/request-otp`, { email });
+      setOtpSent(true);
+      setOtpVerified(false);
+      setOtpStatus('OTP sent to your email');
+      setStep('otp');
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to send OTP');
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    if (!otp) {
+      setError('Please enter the OTP');
+      return;
+    }
+
+    setError('');
+    setOtpStatus('');
+    setOtpLoading(true);
+
+    try {
+      await axios.post(`${API_BASE_URL}/users/verify-otp`, { email, otp });
+      setOtpVerified(true);
+      setOtpStatus('Email verified');
+      setStep('password');
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'OTP verification failed');
+    } finally {
+      setOtpLoading(false);
+    }
+  };
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    if (!otpVerified) {
+      setError('Please verify your email before creating an account');
+      return;
+    }
     if (password !== confirmPassword) {
       setError('Passwords do not match');
       return;
@@ -40,6 +150,31 @@ export function RegisterPage() {
       navigate('/');
     } else {
       setError(result.message);
+    }
+  };
+  const handleGoogleLogin = () => {
+    setError('');
+
+    if (!googleClientId) {
+      setError('Google login is not configured');
+      return;
+    }
+
+    const ready = initGoogle();
+    if (!ready) {
+      setError('Google login is not ready yet');
+      return;
+    }
+
+    const button = googleButtonRef.current?.querySelector(
+      'div[role="button"]'
+    ) as HTMLDivElement | null;
+
+    if (button) {
+      button.click();
+    } else {
+      const google = (window as any).google;
+      google?.accounts?.id?.prompt();
     }
   };
   return (
@@ -90,115 +225,207 @@ export function RegisterPage() {
           }
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div>
-              <label
-                htmlFor="name"
-                className="block text-sm font-medium text-text-secondary mb-2">
-
-                Full Name
-              </label>
-              <div className="relative">
-                <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-muted" />
-                <input
-                  id="name"
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required
-                  className="w-full pl-10 pr-4 py-3 bg-background border border-border rounded-lg text-text-primary placeholder:text-text-muted focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
-                  placeholder="John Doe" />
-
-              </div>
-            </div>
-
-            <div>
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium text-text-secondary mb-2">
-
-                Email Address
-              </label>
-              <div className="relative">
-                <MailIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-muted" />
-                <input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="w-full pl-10 pr-4 py-3 bg-background border border-border rounded-lg text-text-primary placeholder:text-text-muted focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
-                  placeholder="you@example.com" />
-
-              </div>
-            </div>
-
-            <div>
-              <label
-                htmlFor="password"
-                className="block text-sm font-medium text-text-secondary mb-2">
-
-                Password
-              </label>
-              <div className="relative">
-                <LockIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-muted" />
-                <input
-                  id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  minLength={6}
-                  className="w-full pl-10 pr-12 py-3 bg-background border border-border rounded-lg text-text-primary placeholder:text-text-muted focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
-                  placeholder="••••••••" />
-
+          {step === 'details' &&
+          <form className="space-y-5">
+              <div className="space-y-4">
+                <div
+                  ref={googleButtonRef}
+                  className="absolute -left-[9999px] -top-[9999px]"
+                />
                 <button
                   type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-secondary transition-colors">
+                  onClick={handleGoogleLogin}
+                  disabled={isGoogleLoading}
+                  className="w-full py-3 rounded-lg border border-border bg-background text-text-primary font-semibold hover:bg-surface-elevated transition-colors">
 
-                  {showPassword ?
-                  <EyeOffIcon className="w-5 h-5" /> :
-
-                  <EyeIcon className="w-5 h-5" />
-                  }
+                  <img
+                    src="/google_icon.png"
+                    alt="Google"
+                    className="inline-block w-5 h-5 mr-3"
+                  />
+                  {isGoogleLoading ? 'Connecting...' : 'Continue with Google'}
                 </button>
+                <div className="flex items-center gap-3">
+                  <div className="h-px flex-1 bg-border" />
+                  <span className="text-xs text-text-muted">or</span>
+                  <div className="h-px flex-1 bg-border" />
+                </div>
               </div>
-            </div>
 
-            <div>
-              <label
-                htmlFor="confirmPassword"
-                className="block text-sm font-medium text-text-secondary mb-2">
+              <div>
+                <label
+                  htmlFor="name"
+                  className="block text-sm font-medium text-text-secondary mb-2">
 
-                Confirm Password
-              </label>
-              <div className="relative">
-                <LockIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-muted" />
+                  Full Name
+                </label>
+                <div className="relative">
+                  <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-muted" />
+                  <input
+                    id="name"
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    required
+                    className="w-full pl-10 pr-4 py-3 bg-background border border-border rounded-lg text-text-primary placeholder:text-text-muted focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
+                    placeholder="John Doe" />
+
+                </div>
+              </div>
+
+              <div>
+                <label
+                  htmlFor="email"
+                  className="block text-sm font-medium text-text-secondary mb-2">
+
+                  Email Address
+                </label>
+                <div className="relative">
+                  <MailIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-muted" />
+                  <input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      setOtp('');
+                      setOtpSent(false);
+                      setOtpVerified(false);
+                      setOtpStatus('');
+                      setStep('details');
+                    }}
+                    required
+                    className="w-full pl-10 pr-4 py-3 bg-background border border-border rounded-lg text-text-primary placeholder:text-text-muted focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
+                    placeholder="you@example.com" />
+
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleSendOtp}
+                disabled={otpLoading || !email || !name}
+                className="w-full py-3 bg-primary hover:bg-primary-light text-white font-semibold rounded-lg flex items-center justify-center gap-2 disabled:opacity-50 transition-colors">
+
+                {otpLoading ? 'Sending OTP...' : 'Verify Email'}
+              </button>
+            </form>
+          }
+
+          {step === 'otp' &&
+          <form className="space-y-5">
+              <div className="rounded-lg border border-border bg-background/60 px-4 py-3 text-sm text-text-secondary">
+                We sent a verification code to {email}
+              </div>
+
+              <div>
+                <label
+                  htmlFor="otp"
+                  className="block text-sm font-medium text-text-secondary mb-2">
+
+                  Enter OTP
+                </label>
                 <input
-                  id="confirmPassword"
-                  type={showPassword ? 'text' : 'password'}
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
-                  className="w-full pl-10 pr-4 py-3 bg-background border border-border rounded-lg text-text-primary placeholder:text-text-muted focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
-                  placeholder="••••••••" />
-
+                  id="otp"
+                  type="text"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value)}
+                  className="w-full px-4 py-3 bg-background border border-border rounded-lg text-text-primary placeholder:text-text-muted focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
+                  placeholder="Enter OTP" />
               </div>
-            </div>
 
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full py-3 bg-primary hover:bg-primary-light text-white font-semibold rounded-lg flex items-center justify-center gap-2 disabled:opacity-50 transition-colors">
+              <button
+                type="button"
+                onClick={handleVerifyOtp}
+                disabled={otpLoading || !otp}
+                className="w-full py-3 bg-primary hover:bg-primary-light text-white font-semibold rounded-lg flex items-center justify-center gap-2 disabled:opacity-50 transition-colors">
 
-              {isLoading ?
-              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> :
+                {otpLoading ? 'Verifying...' : 'Verify OTP'}
+              </button>
 
-              'Create Account'
-              }
-            </button>
-          </form>
+              <button
+                type="button"
+                onClick={() => setStep('details')}
+                className="w-full py-2 border border-border text-text-secondary rounded-lg text-sm font-semibold transition-colors">
+
+                Back
+              </button>
+            </form>
+          }
+
+          {step === 'password' &&
+          <form onSubmit={handleSubmit} className="space-y-5">
+              <div className="rounded-lg border border-border bg-background/60 px-4 py-3 text-sm text-green-400">
+                Email verified
+              </div>
+
+              <div>
+                <label
+                  htmlFor="password"
+                  className="block text-sm font-medium text-text-secondary mb-2">
+
+                  Password
+                </label>
+                <div className="relative">
+                  <LockIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-muted" />
+                  <input
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    minLength={6}
+                    className="w-full pl-10 pr-12 py-3 bg-background border border-border rounded-lg text-text-primary placeholder:text-text-muted focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
+                    placeholder="••••••••" />
+
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-secondary transition-colors">
+
+                    {showPassword ?
+                    <EyeOffIcon className="w-5 h-5" /> :
+
+                    <EyeIcon className="w-5 h-5" />
+                    }
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label
+                  htmlFor="confirmPassword"
+                  className="block text-sm font-medium text-text-secondary mb-2">
+
+                  Confirm Password
+                </label>
+                <div className="relative">
+                  <LockIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-muted" />
+                  <input
+                    id="confirmPassword"
+                    type={showPassword ? 'text' : 'password'}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                    className="w-full pl-10 pr-4 py-3 bg-background border border-border rounded-lg text-text-primary placeholder:text-text-muted focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
+                    placeholder="••••••••" />
+
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full py-3 bg-primary hover:bg-primary-light text-white font-semibold rounded-lg flex items-center justify-center gap-2 disabled:opacity-50 transition-colors">
+
+                {isLoading ?
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> :
+
+                'Create Account'
+                }
+              </button>
+            </form>
+          }
 
           {/* Login Link */}
           <p className="text-center text-text-secondary mt-6">
