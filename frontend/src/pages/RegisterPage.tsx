@@ -148,6 +148,25 @@ export function RegisterPage() {
           {/* Form */}
           {step === 'details' &&
           <form className="space-y-5">
+              <div className="space-y-4">
+                <button
+                  type="button"
+                  className="w-full py-3 rounded-lg border border-border bg-background text-text-primary font-semibold hover:bg-surface-elevated transition-colors">
+
+                  <img
+                    src="/google_icon.png"
+                    alt="Google"
+                    className="inline-block w-5 h-5 mr-3"
+                  />
+                  Continue with Google
+                </button>
+                <div className="flex items-center gap-3">
+                  <div className="h-px flex-1 bg-border" />
+                  <span className="text-xs text-text-muted">or</span>
+                  <div className="h-px flex-1 bg-border" />
+                </div>
+              </div>
+
               <div>
                 <label
                   htmlFor="name"
