@@ -115,7 +115,14 @@ npm run preview
 
 ---
 
-## Environment
+
+## Environment Variables
+
+Copy `.env.example` to `.env` and fill in your Google Client ID:
+```bash
+cp .env.example .env
+# Then edit .env
+```
 
 The frontend connects to the backend at `http://localhost:5050` by default. To change this, update the base URL in `src/services/`.
 

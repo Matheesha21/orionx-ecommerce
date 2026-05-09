@@ -63,26 +63,32 @@ cd backend
 npm install
 ```
 
-Create `backend/.env`:
-```env
-PORT=5050
-MONGO_URI=mongodb+srv://<user>:<password>@cluster.mongodb.net/<dbname>
-JWT_SECRET=your_jwt_secret
 
-CLOUDINARY_CLOUD_NAME=your_cloud_name
-CLOUDINARY_API_KEY=your_api_key
-CLOUDINARY_API_SECRET=your_api_secret
+Copy `backend/.env.example` to `backend/.env` and fill in your values:
+```bash
+cp backend/.env.example backend/.env
+# Then edit backend/.env with your secrets
 ```
 
 ```bash
 npm run dev
 ```
 
+
 ### 3. Set up the frontend
 
 ```bash
 cd frontend
 npm install
+```
+
+Copy `frontend/.env.example` to `frontend/.env` and fill in your Google Client ID:
+```bash
+cp frontend/.env.example frontend/.env
+# Then edit frontend/.env
+```
+
+```bash
 npm run dev
 ```
 
@@ -102,10 +108,3 @@ npm run dev
 | Frontend | http://localhost:5173 |
 | Backend API | http://localhost:5050 |
 | Health Check | http://localhost:5050/api/health |
-
----
-
-## Roadmap
-
-- [ ] Product review and ratings system
-- [ ] Real-time inventory updates
