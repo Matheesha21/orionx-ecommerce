@@ -76,6 +76,7 @@ export const registerUser = async (req, res) => {
       username,
       email: normalizedEmail,
       password,
+      authType: "EMAIL",
       isEmailVerified: true,
     });
 
@@ -87,6 +88,7 @@ export const registerUser = async (req, res) => {
         id: user._id,
         username: user.username,
         email: user.email,
+        authType: user.authType,
         isEmailVerified: user.isEmailVerified,
         isAdmin: user.isAdmin,
       },
@@ -207,6 +209,7 @@ export const loginUser = async (req, res) => {
         id: user._id,
         username: user.username,
         email: user.email,
+        authType: user.authType,
         isEmailVerified: user.isEmailVerified,
         isAdmin: user.isAdmin,
       },
@@ -256,6 +259,7 @@ export const googleLogin = async (req, res) => {
         username,
         email: normalizedEmail,
         password: randomPassword,
+        authType: "GOOGLE",
         isEmailVerified: true,
       });
     }
@@ -271,6 +275,7 @@ export const googleLogin = async (req, res) => {
         id: user._id,
         username: user.username,
         email: user.email,
+        authType: user.authType,
         isEmailVerified: user.isEmailVerified,
         isAdmin: user.isAdmin,
       },
