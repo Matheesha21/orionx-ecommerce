@@ -7,7 +7,7 @@ import {
   TruckIcon } from
 'lucide-react';
 import { motion } from 'framer-motion';
-const LOGO_URL = "/WhatsApp_Image_2025-08-21_at_12.50.56_(1).jpg";
+const LOGO_URL = "/logo.jpg";
 
 export function HeroSection() {
   return (

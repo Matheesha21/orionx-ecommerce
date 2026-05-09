@@ -11,7 +11,7 @@ import {
 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
-const LOGO_URL = "/WhatsApp_Image_2025-08-21_at_12.50.56_(1).jpg";
+const LOGO_URL = "/logo.jpg";
 const API_BASE_URL = "http://127.0.0.1:5050/api";
 
 export function RegisterPage() {

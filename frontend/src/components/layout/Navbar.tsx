@@ -13,7 +13,7 @@ import { useAuth } from "../../context/AuthContext";
 import { SearchBar } from "../ui/SearchBar";
 import { userApi } from "../../services/userService";
 
-const LOGO_URL = "/WhatsApp_Image_2025-08-21_at_12.50.56_(1).jpg";
+const LOGO_URL = "/logo.jpg";
 
 const navLinks = [
   { label: "Home", href: "/" },
