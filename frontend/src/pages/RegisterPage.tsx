@@ -15,6 +15,7 @@ const LOGO_URL = "/WhatsApp_Image_2025-08-21_at_12.50.56_(1).jpg";
 const API_BASE_URL = "http://127.0.0.1:5050/api";
 
 export function RegisterPage() {
+  const [step, setStep] = useState<'details' | 'otp' | 'password'>('details');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -44,6 +45,7 @@ export function RegisterPage() {
       setOtpSent(true);
       setOtpVerified(false);
       setOtpStatus('OTP sent to your email');
+      setStep('otp');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to send OTP');
     } finally {
@@ -65,6 +67,7 @@ export function RegisterPage() {
       await axios.post(`${API_BASE_URL}/users/verify-otp`, { email, otp });
       setOtpVerified(true);
       setOtpStatus('Email verified');
+      setStep('password');
     } catch (err: any) {
       setError(err.response?.data?.message || 'OTP verification failed');
     } finally {
@@ -143,155 +146,182 @@ export function RegisterPage() {
           }
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div>
-              <label
-                htmlFor="name"
-                className="block text-sm font-medium text-text-secondary mb-2">
+          {step === 'details' &&
+          <form className="space-y-5">
+              <div>
+                <label
+                  htmlFor="name"
+                  className="block text-sm font-medium text-text-secondary mb-2">
 
-                Full Name
-              </label>
-              <div className="relative">
-                <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-muted" />
-                <input
-                  id="name"
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required
-                  className="w-full pl-10 pr-4 py-3 bg-background border border-border rounded-lg text-text-primary placeholder:text-text-muted focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
-                  placeholder="John Doe" />
-
-              </div>
-            </div>
-
-            <div>
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium text-text-secondary mb-2">
-
-                Email Address
-              </label>
-              <div className="relative">
-                <MailIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-muted" />
-                <input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => {
-                    setEmail(e.target.value);
-                    setOtp('');
-                    setOtpSent(false);
-                    setOtpVerified(false);
-                    setOtpStatus('');
-                  }}
-                  required
-                  className="w-full pl-10 pr-4 py-3 bg-background border border-border rounded-lg text-text-primary placeholder:text-text-muted focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
-                  placeholder="you@example.com" />
-
-              </div>
-              <div className="mt-3 flex gap-3">
-                <button
-                  type="button"
-                  onClick={handleSendOtp}
-                  disabled={otpLoading || !email || otpVerified}
-                  className="flex-1 py-2 bg-primary/10 text-primary border border-primary/30 rounded-lg text-sm font-semibold disabled:opacity-50 transition-colors">
-
-                  {otpLoading ? 'Sending...' : otpVerified ? 'Verified' : 'Send OTP'}
-                </button>
-              </div>
-              {otpSent &&
-              <div className="mt-4 space-y-3">
+                  Full Name
+                </label>
+                <div className="relative">
+                  <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-muted" />
                   <input
-                    id="otp"
+                    id="name"
                     type="text"
-                    value={otp}
-                    onChange={(e) => setOtp(e.target.value)}
-                    className="w-full px-4 py-3 bg-background border border-border rounded-lg text-text-primary placeholder:text-text-muted focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
-                    placeholder="Enter OTP" />
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    required
+                    className="w-full pl-10 pr-4 py-3 bg-background border border-border rounded-lg text-text-primary placeholder:text-text-muted focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
+                    placeholder="John Doe" />
+
+                </div>
+              </div>
+
+              <div>
+                <label
+                  htmlFor="email"
+                  className="block text-sm font-medium text-text-secondary mb-2">
+
+                  Email Address
+                </label>
+                <div className="relative">
+                  <MailIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-muted" />
+                  <input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      setOtp('');
+                      setOtpSent(false);
+                      setOtpVerified(false);
+                      setOtpStatus('');
+                      setStep('details');
+                    }}
+                    required
+                    className="w-full pl-10 pr-4 py-3 bg-background border border-border rounded-lg text-text-primary placeholder:text-text-muted focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
+                    placeholder="you@example.com" />
+
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleSendOtp}
+                disabled={otpLoading || !email || !name}
+                className="w-full py-3 bg-primary hover:bg-primary-light text-white font-semibold rounded-lg flex items-center justify-center gap-2 disabled:opacity-50 transition-colors">
+
+                {otpLoading ? 'Sending OTP...' : 'Verify Email'}
+              </button>
+            </form>
+          }
+
+          {step === 'otp' &&
+          <form className="space-y-5">
+              <div className="rounded-lg border border-border bg-background/60 px-4 py-3 text-sm text-text-secondary">
+                We sent a verification code to {email}
+              </div>
+
+              <div>
+                <label
+                  htmlFor="otp"
+                  className="block text-sm font-medium text-text-secondary mb-2">
+
+                  Enter OTP
+                </label>
+                <input
+                  id="otp"
+                  type="text"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value)}
+                  className="w-full px-4 py-3 bg-background border border-border rounded-lg text-text-primary placeholder:text-text-muted focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
+                  placeholder="Enter OTP" />
+              </div>
+
+              <button
+                type="button"
+                onClick={handleVerifyOtp}
+                disabled={otpLoading || !otp}
+                className="w-full py-3 bg-primary hover:bg-primary-light text-white font-semibold rounded-lg flex items-center justify-center gap-2 disabled:opacity-50 transition-colors">
+
+                {otpLoading ? 'Verifying...' : 'Verify OTP'}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setStep('details')}
+                className="w-full py-2 border border-border text-text-secondary rounded-lg text-sm font-semibold transition-colors">
+
+                Back
+              </button>
+            </form>
+          }
+
+          {step === 'password' &&
+          <form onSubmit={handleSubmit} className="space-y-5">
+              <div className="rounded-lg border border-border bg-background/60 px-4 py-3 text-sm text-green-400">
+                Email verified
+              </div>
+
+              <div>
+                <label
+                  htmlFor="password"
+                  className="block text-sm font-medium text-text-secondary mb-2">
+
+                  Password
+                </label>
+                <div className="relative">
+                  <LockIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-muted" />
+                  <input
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    minLength={6}
+                    className="w-full pl-10 pr-12 py-3 bg-background border border-border rounded-lg text-text-primary placeholder:text-text-muted focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
+                    placeholder="••••••••" />
+
                   <button
                     type="button"
-                    onClick={handleVerifyOtp}
-                    disabled={otpLoading || otpVerified || !otp}
-                    className="w-full py-2 bg-primary text-white rounded-lg text-sm font-semibold disabled:opacity-50 transition-colors">
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-secondary transition-colors">
 
-                    {otpLoading ? 'Verifying...' : 'Verify OTP'}
+                    {showPassword ?
+                    <EyeOffIcon className="w-5 h-5" /> :
+
+                    <EyeIcon className="w-5 h-5" />
+                    }
                   </button>
                 </div>
-              }
-              {otpStatus &&
-              <p className="mt-3 text-sm text-green-400">
-                  {otpStatus}
-                </p>
-              }
-            </div>
-
-            <div>
-              <label
-                htmlFor="password"
-                className="block text-sm font-medium text-text-secondary mb-2">
-
-                Password
-              </label>
-              <div className="relative">
-                <LockIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-muted" />
-                <input
-                  id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  minLength={6}
-                  className="w-full pl-10 pr-12 py-3 bg-background border border-border rounded-lg text-text-primary placeholder:text-text-muted focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
-                  placeholder="••••••••" />
-
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-secondary transition-colors">
-
-                  {showPassword ?
-                  <EyeOffIcon className="w-5 h-5" /> :
-
-                  <EyeIcon className="w-5 h-5" />
-                  }
-                </button>
               </div>
-            </div>
 
-            <div>
-              <label
-                htmlFor="confirmPassword"
-                className="block text-sm font-medium text-text-secondary mb-2">
+              <div>
+                <label
+                  htmlFor="confirmPassword"
+                  className="block text-sm font-medium text-text-secondary mb-2">
 
-                Confirm Password
-              </label>
-              <div className="relative">
-                <LockIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-muted" />
-                <input
-                  id="confirmPassword"
-                  type={showPassword ? 'text' : 'password'}
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
-                  className="w-full pl-10 pr-4 py-3 bg-background border border-border rounded-lg text-text-primary placeholder:text-text-muted focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
-                  placeholder="••••••••" />
+                  Confirm Password
+                </label>
+                <div className="relative">
+                  <LockIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-muted" />
+                  <input
+                    id="confirmPassword"
+                    type={showPassword ? 'text' : 'password'}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                    className="w-full pl-10 pr-4 py-3 bg-background border border-border rounded-lg text-text-primary placeholder:text-text-muted focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
+                    placeholder="••••••••" />
 
+                </div>
               </div>
-            </div>
 
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full py-3 bg-primary hover:bg-primary-light text-white font-semibold rounded-lg flex items-center justify-center gap-2 disabled:opacity-50 transition-colors">
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full py-3 bg-primary hover:bg-primary-light text-white font-semibold rounded-lg flex items-center justify-center gap-2 disabled:opacity-50 transition-colors">
 
-              {isLoading ?
-              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> :
+                {isLoading ?
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> :
 
-              'Create Account'
-              }
-            </button>
-          </form>
+                'Create Account'
+                }
+              </button>
+            </form>
+          }
 
           {/* Login Link */}
           <p className="text-center text-text-secondary mt-6">

@@ -17,9 +17,17 @@ export const registerUser = async (req, res) => {
       return res.status(400).json({ message: "Email is required" });
     }
 
-    const userExists = await User.findOne({ email: normalizedEmail });
-    if (userExists) {
-      return res.status(400).json({ message: "User already exists" });
+    const [emailExists, usernameExists] = await Promise.all([
+      User.findOne({ email: normalizedEmail }),
+      User.findOne({ username: username?.trim() }),
+    ]);
+
+    if (emailExists) {
+      return res.status(400).json({ message: "Email already in use" });
+    }
+
+    if (usernameExists) {
+      return res.status(400).json({ message: "Username already in use" });
     }
 
     const now = new Date();
@@ -53,6 +61,11 @@ export const registerUser = async (req, res) => {
       },
     });
   } catch (error) {
+    if (error?.code === 11000) {
+      const field = Object.keys(error.keyValue || {})[0];
+      const fieldName = field === "email" ? "Email" : "Username";
+      return res.status(400).json({ message: `${fieldName} already in use` });
+    }
     res.status(500).json({ message: error.message });
   }
 };
