@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import {
   UserIcon,
   MailIcon,
@@ -11,20 +12,72 @@ import {
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 const LOGO_URL = "/WhatsApp_Image_2025-08-21_at_12.50.56_(1).jpg";
+const API_BASE_URL = "http://127.0.0.1:5050/api";
 
 export function RegisterPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [otp, setOtp] = useState('');
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpVerified, setOtpVerified] = useState(false);
+  const [otpStatus, setOtpStatus] = useState('');
+  const [otpLoading, setOtpLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { register } = useAuth();
   const navigate = useNavigate();
+  const handleSendOtp = async () => {
+    if (!email) {
+      setError('Please enter your email first');
+      return;
+    }
+
+    setError('');
+    setOtpStatus('');
+    setOtpLoading(true);
+
+    try {
+      await axios.post(`${API_BASE_URL}/users/request-otp`, { email });
+      setOtpSent(true);
+      setOtpVerified(false);
+      setOtpStatus('OTP sent to your email');
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to send OTP');
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    if (!otp) {
+      setError('Please enter the OTP');
+      return;
+    }
+
+    setError('');
+    setOtpStatus('');
+    setOtpLoading(true);
+
+    try {
+      await axios.post(`${API_BASE_URL}/users/verify-otp`, { email, otp });
+      setOtpVerified(true);
+      setOtpStatus('Email verified');
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'OTP verification failed');
+    } finally {
+      setOtpLoading(false);
+    }
+  };
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    if (!otpVerified) {
+      setError('Please verify your email before creating an account');
+      return;
+    }
     if (password !== confirmPassword) {
       setError('Passwords do not match');
       return;
@@ -125,12 +178,52 @@ export function RegisterPage() {
                   id="email"
                   type="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    setOtp('');
+                    setOtpSent(false);
+                    setOtpVerified(false);
+                    setOtpStatus('');
+                  }}
                   required
                   className="w-full pl-10 pr-4 py-3 bg-background border border-border rounded-lg text-text-primary placeholder:text-text-muted focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
                   placeholder="you@example.com" />
 
               </div>
+              <div className="mt-3 flex gap-3">
+                <button
+                  type="button"
+                  onClick={handleSendOtp}
+                  disabled={otpLoading || !email || otpVerified}
+                  className="flex-1 py-2 bg-primary/10 text-primary border border-primary/30 rounded-lg text-sm font-semibold disabled:opacity-50 transition-colors">
+
+                  {otpLoading ? 'Sending...' : otpVerified ? 'Verified' : 'Send OTP'}
+                </button>
+              </div>
+              {otpSent &&
+              <div className="mt-4 space-y-3">
+                  <input
+                    id="otp"
+                    type="text"
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value)}
+                    className="w-full px-4 py-3 bg-background border border-border rounded-lg text-text-primary placeholder:text-text-muted focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
+                    placeholder="Enter OTP" />
+                  <button
+                    type="button"
+                    onClick={handleVerifyOtp}
+                    disabled={otpLoading || otpVerified || !otp}
+                    className="w-full py-2 bg-primary text-white rounded-lg text-sm font-semibold disabled:opacity-50 transition-colors">
+
+                    {otpLoading ? 'Verifying...' : 'Verify OTP'}
+                  </button>
+                </div>
+              }
+              {otpStatus &&
+              <p className="mt-3 text-sm text-green-400">
+                  {otpStatus}
+                </p>
+              }
             </div>
 
             <div>

@@ -1,22 +1,46 @@
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
 import User from "../models/User.js";
+import EmailOtp from "../models/EmailOtp.js";
+import { sendOtpEmail } from "../config/mailer.js";
+
+const OTP_TTL_MINUTES = 10;
 
 // @desc    Register user
 export const registerUser = async (req, res) => {
   try {
     const { username, email, password } = req.body;
+    const normalizedEmail = email?.toLowerCase().trim();
 
-    const userExists = await User.findOne({ email });
+    if (!normalizedEmail) {
+      return res.status(400).json({ message: "Email is required" });
+    }
+
+    const userExists = await User.findOne({ email: normalizedEmail });
     if (userExists) {
       return res.status(400).json({ message: "User already exists" });
     }
 
+    const now = new Date();
+    const verifiedOtp = await EmailOtp.findOne({
+      email: normalizedEmail,
+      verifiedAt: { $ne: null },
+      expiresAt: { $gt: now },
+    }).sort({ verifiedAt: -1 });
+
+    if (!verifiedOtp) {
+      return res.status(400).json({ message: "Email is not verified" });
+    }
+
     const user = await User.create({
       username,
-      email,
+      email: normalizedEmail,
       password,
+      isEmailVerified: true,
     });
+
+    await EmailOtp.deleteMany({ email: normalizedEmail });
 
     res.status(201).json({
       message: "User registered successfully",
@@ -24,9 +48,87 @@ export const registerUser = async (req, res) => {
         id: user._id,
         username: user.username,
         email: user.email,
+        isEmailVerified: user.isEmailVerified,
         isAdmin: user.isAdmin,
       },
     });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Request email OTP
+export const requestEmailOtp = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const normalizedEmail = email?.toLowerCase().trim();
+
+    if (!normalizedEmail) {
+      return res.status(400).json({ message: "Email is required" });
+    }
+
+    const userExists = await User.findOne({ email: normalizedEmail });
+    if (userExists) {
+      return res.status(400).json({ message: "User already exists" });
+    }
+
+    const otp = crypto.randomInt(100000, 1000000).toString();
+    const otpHash = await bcrypt.hash(otp, 10);
+    const expiresAt = new Date(Date.now() + OTP_TTL_MINUTES * 60 * 1000);
+
+    await EmailOtp.create({
+      email: normalizedEmail,
+      otpHash,
+      expiresAt,
+    });
+
+    await sendOtpEmail(normalizedEmail, otp);
+
+    res.status(200).json({ message: "OTP sent" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Verify email OTP
+export const verifyEmailOtp = async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+    const normalizedEmail = email?.toLowerCase().trim();
+
+    if (!normalizedEmail || !otp) {
+      return res.status(400).json({ message: "Email and OTP are required" });
+    }
+
+    const now = new Date();
+    const otpRecords = await EmailOtp.find({
+      email: normalizedEmail,
+      expiresAt: { $gt: now },
+    })
+      .sort({ createdAt: -1 })
+      .limit(5);
+
+    if (otpRecords.length === 0) {
+      return res.status(400).json({ message: "OTP expired or not found" });
+    }
+
+    let matchedRecord = null;
+    for (const record of otpRecords) {
+      const isMatch = await bcrypt.compare(otp, record.otpHash);
+      if (isMatch) {
+        matchedRecord = record;
+        break;
+      }
+    }
+
+    if (!matchedRecord) {
+      return res.status(400).json({ message: "Invalid OTP" });
+    }
+
+    matchedRecord.verifiedAt = new Date();
+    await matchedRecord.save();
+
+    res.status(200).json({ message: "Email verified" });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -36,8 +138,9 @@ export const registerUser = async (req, res) => {
 export const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
+    const normalizedEmail = email?.toLowerCase().trim();
 
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email: normalizedEmail });
 
     if (!user) {
       return res.status(400).json({ message: "User not found" });
@@ -60,6 +163,7 @@ export const loginUser = async (req, res) => {
         id: user._id,
         username: user.username,
         email: user.email,
+        isEmailVerified: user.isEmailVerified,
         isAdmin: user.isAdmin,
       },
     });
