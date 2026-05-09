@@ -28,6 +28,8 @@ interface Order {
 
 export function ProfilePage() {
   const { user, isAuthenticated, logout } = useAuth();
+  const [fullName, setFullName] = useState("");
+  const [initialName, setInitialName] = useState("");
 
   const [orders, setOrders] = useState<Order[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(true);
@@ -65,6 +67,13 @@ export function ProfilePage() {
     }
   }, [isAuthenticated, user]);
 
+  useEffect(() => {
+    if (user?.name) {
+      setFullName(user.name);
+      setInitialName(user.name);
+    }
+  }, [user]);
+
   if (!isAuthenticated || !user) {
     return <Navigate to="/login" replace />;
   }
@@ -79,6 +88,8 @@ export function ProfilePage() {
       currency: "USD",
     }).format(price);
   };
+
+  const isNameChanged = fullName.trim() !== initialName.trim();
 
   return (
     <div className="min-h-screen bg-background">
@@ -162,7 +173,8 @@ export function ProfilePage() {
                     </label>
                     <input
                       type="text"
-                      defaultValue={user.name}
+                      value={fullName}
+                      onChange={(event) => setFullName(event.target.value)}
                       className="w-full px-4 py-3 bg-background border border-border rounded-lg text-text-primary focus:outline-none focus:border-primary"
                     />
                   </div>
@@ -182,7 +194,8 @@ export function ProfilePage() {
 
                 <button
                   type="button"
-                  className="px-6 py-3 bg-primary hover:bg-primary-light text-white font-semibold rounded-lg transition-colors"
+                  disabled={!isNameChanged}
+                  className="px-6 py-3 bg-primary hover:bg-primary-light text-white font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-primary"
                 >
                   Save Changes
                 </button>
