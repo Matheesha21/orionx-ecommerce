@@ -73,6 +73,32 @@ cp .env.example .env
 # Then edit .env with your secrets
 ```
 
+### Local setup (quick)
+
+1. Copy the example env into the backend folder and open it for editing:
+
+```bash
+cd Backend
+cp .env.example .env
+open .env # or use your editor: code . && code .env
+```
+
+2. Edit `Backend/.env` and set `MONGO_URI` to your MongoDB connection string. Example format:
+
+```
+MONGO_URI=mongodb+srv://<username>:<password>@cluster0.abcd.mongodb.net/your_db_name?retryWrites=true&w=majority
+```
+
+3. Start the server:
+
+```bash
+npm run dev
+```
+
+Notes:
+- If you leave `MONGO_URI` as the placeholder from `.env.example`, the server will start in development but will skip DB connection until you set a real URI. The `/api/health` endpoint will report `database: disconnected` until a successful connection is established.
+- For production, ensure `NODE_ENV=production` and provide a valid `MONGO_URI`; failing to connect in production should be considered a fatal error and you should configure process supervision (systemd, Docker restart policies, etc.).
+
 ### Run
 
 ```bash
