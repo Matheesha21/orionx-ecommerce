@@ -4,6 +4,10 @@ import { protect } from "../middleware/authMiddleware.js"; // Added .js
 import {
   registerUser,
   loginUser,
+  googleLogin,
+  getProfile,
+  requestEmailOtp,
+  verifyEmailOtp,
   addToCart,
   getCart,
   updateCartItem,
@@ -14,8 +18,12 @@ import {
 } from "../controllers/userController.js"; // Added .js
 
 // Public Routes
+router.post("/request-otp", requestEmailOtp);
+router.post("/verify-otp", verifyEmailOtp);
 router.post("/register", registerUser);
 router.post("/login", loginUser);
+router.post("/google-login", googleLogin);
+router.get("/profile", protect, getProfile);
 
 // Cart
 router.post("/cart", protect, addToCart);

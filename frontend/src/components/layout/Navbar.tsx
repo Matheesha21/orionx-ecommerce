@@ -7,17 +7,13 @@ import {
   MenuIcon,
   XIcon,
   ChevronDownIcon,
-  LogOutIcon,
-  LayoutDashboardIcon,
-  PackageIcon,
-  SettingsIcon,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
 import { SearchBar } from "../ui/SearchBar";
 import { userApi } from "../../services/userService";
 
-const LOGO_URL = "/WhatsApp_Image_2025-08-21_at_12.50.56_(1).jpg";
+const LOGO_URL = "/logo.jpg";
 
 const navLinks = [
   { label: "Home", href: "/" },
@@ -35,7 +31,8 @@ export function Navbar() {
   const [wishlistCount, setWishlistCount] = useState(0);
 
   const location = useLocation();
-  const { user, isAuthenticated, isAdmin, logout } = useAuth();
+  const { user, isAuthenticated } = useAuth();
+  const userInitial = (user?.name || "").trim().charAt(0).toUpperCase();
 
   const fetchCounts = async () => {
     try {
@@ -78,13 +75,6 @@ export function Navbar() {
   useEffect(() => {
     fetchCounts();
   }, [location.pathname, isAuthenticated]);
-
-  const handleLogout = () => {
-    logout();
-    setIsUserMenuOpen(false);
-    setCartCount(0);
-    setWishlistCount(0);
-  };
 
   return (
     <header
@@ -148,25 +138,29 @@ export function Navbar() {
             </Link>
 
             <div className="relative">
-              <button
-                onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                className="flex items-center gap-2 p-2 text-text-secondary hover:text-text-primary transition-colors"
-                aria-label="User menu"
-              >
-                {user?.avatar ? (
-                  <img
-                    src={user.avatar}
-                    alt={user.name}
-                    className="w-6 h-6 md:w-8 md:h-8 rounded-full object-cover"
-                  />
-                ) : (
+              {isAuthenticated ? (
+                <Link
+                  to="/profile"
+                  className="flex items-center gap-2 p-2 text-text-secondary hover:text-text-primary transition-colors"
+                  aria-label="User profile"
+                >
+                  <div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-primary text-white flex items-center justify-center text-xs md:text-sm font-semibold">
+                    {userInitial || "U"}
+                  </div>
+                </Link>
+              ) : (
+                <button
+                  onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                  className="flex items-center gap-2 p-2 text-text-secondary hover:text-text-primary transition-colors"
+                  aria-label="User menu"
+                >
                   <UserIcon className="w-5 h-5 md:w-6 md:h-6" />
-                )}
-                <ChevronDownIcon className="hidden md:block w-4 h-4" />
-              </button>
+                  <ChevronDownIcon className="hidden md:block w-4 h-4" />
+                </button>
+              )}
 
               <AnimatePresence>
-                {isUserMenuOpen && (
+                {!isAuthenticated && isUserMenuOpen && (
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -174,80 +168,21 @@ export function Navbar() {
                     transition={{ duration: 0.2 }}
                     className="absolute right-0 mt-2 w-56 bg-surface border border-border rounded-lg shadow-xl overflow-hidden"
                   >
-                    {isAuthenticated ? (
-                      <>
-                        <div className="px-4 py-3 border-b border-border">
-                          <p className="text-sm font-medium text-text-primary">
-                            {user?.name}
-                          </p>
-                          <p className="text-xs text-text-muted truncate">
-                            {user?.email}
-                          </p>
-                        </div>
+                    <div className="py-2">
+                      <Link
+                        to="/login"
+                        className="block px-4 py-2 text-sm text-text-secondary hover:text-text-primary hover:bg-surface-elevated transition-colors"
+                      >
+                        Sign In
+                      </Link>
 
-                        <div className="py-2">
-                          <Link
-                            to="/profile"
-                            className="flex items-center gap-3 px-4 py-2 text-sm text-text-secondary hover:text-text-primary hover:bg-surface-elevated transition-colors"
-                          >
-                            <UserIcon className="w-4 h-4" />
-                            My Profile
-                          </Link>
-
-                          <Link
-                            to="/profile"
-                            className="flex items-center gap-3 px-4 py-2 text-sm text-text-secondary hover:text-text-primary hover:bg-surface-elevated transition-colors"
-                          >
-                            <PackageIcon className="w-4 h-4" />
-                            My Orders
-                          </Link>
-
-                          {isAdmin && (
-                            <Link
-                              to="/admin"
-                              className="flex items-center gap-3 px-4 py-2 text-sm text-text-secondary hover:text-text-primary hover:bg-surface-elevated transition-colors"
-                            >
-                              <LayoutDashboardIcon className="w-4 h-4" />
-                              Admin Dashboard
-                            </Link>
-                          )}
-
-                          <Link
-                            to="/profile"
-                            className="flex items-center gap-3 px-4 py-2 text-sm text-text-secondary hover:text-text-primary hover:bg-surface-elevated transition-colors"
-                          >
-                            <SettingsIcon className="w-4 h-4" />
-                            Settings
-                          </Link>
-                        </div>
-
-                        <div className="border-t border-border py-2">
-                          <button
-                            onClick={handleLogout}
-                            className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-400 hover:bg-surface-elevated transition-colors"
-                          >
-                            <LogOutIcon className="w-4 h-4" />
-                            Sign Out
-                          </button>
-                        </div>
-                      </>
-                    ) : (
-                      <div className="py-2">
-                        <Link
-                          to="/login"
-                          className="block px-4 py-2 text-sm text-text-secondary hover:text-text-primary hover:bg-surface-elevated transition-colors"
-                        >
-                          Sign In
-                        </Link>
-
-                        <Link
-                          to="/register"
-                          className="block px-4 py-2 text-sm text-text-secondary hover:text-text-primary hover:bg-surface-elevated transition-colors"
-                        >
-                          Create Account
-                        </Link>
-                      </div>
-                    )}
+                      <Link
+                        to="/register"
+                        className="block px-4 py-2 text-sm text-text-secondary hover:text-text-primary hover:bg-surface-elevated transition-colors"
+                      >
+                        Create Account
+                      </Link>
+                    </div>
                   </motion.div>
                 )}
               </AnimatePresence>

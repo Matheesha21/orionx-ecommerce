@@ -30,8 +30,26 @@ export const productsApi = {
   },
 
   getBySlug: async (slug: string) => {
-  const response = await axios.get(`${API_BASE_URL}/products/slug/${slug}`);
-  return response.data;
+    const response = await axios.get(`${API_BASE_URL}/products/slug/${slug}`);
+    return response.data;
+  },
+
+  addReview: async (
+    productId: string,
+    reviewData: { rating: number; comment: string },
+    token: string
+  ) => {
+    const response = await axios.post(
+      `${API_BASE_URL}/products/${productId}/reviews`,
+      reviewData,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    return response.data;
   },
 
   create: async (productData: CreateProductPayload, token: string) => {

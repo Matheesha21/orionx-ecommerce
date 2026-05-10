@@ -20,6 +20,15 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    authType: {
+      type: String,
+      enum: ["EMAIL", "GOOGLE"],
+      default: "EMAIL",
+    },
+    isEmailVerified: {
+      type: Boolean,
+      default: false,
+    },
     isAdmin: {
       type: Boolean,
       default: false,

@@ -36,6 +36,7 @@ export interface User {
   id: string;
   name: string;
   email: string;
+  authType: 'EMAIL' | 'GOOGLE';
   role: 'customer' | 'admin';
   avatar?: string;
   addresses: Address[];

@@ -9,7 +9,7 @@ import {
   PhoneIcon,
   MapPinIcon } from
 'lucide-react';
-const LOGO_URL = "/WhatsApp_Image_2025-08-21_at_12.50.56_(1).jpg";
+const LOGO_URL = "/logo.jpg";
 
 const footerLinks = {
   shop: [

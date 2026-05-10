@@ -68,7 +68,7 @@ export function AboutPage() {
                 Our Mission
               </h2>
               <p className="text-text-secondary leading-relaxed mb-4">
-                Founded in 2020, ORIONX was born from a simple idea: technology
+                Founded in 2025, ORIONX was born from a simple idea: technology
                 should be accessible, powerful, and beautifully designed. We
                 believe that whether you're a hardcore gamer, a creative
                 professional, or a tech enthusiast, you deserve the best

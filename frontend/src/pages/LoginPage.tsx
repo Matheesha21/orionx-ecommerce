@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff, Mail, Lock, AlertCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
-const LOGO_URL = "/WhatsApp_Image_2025-08-21_at_12.50.56_(1).jpg";
+const LOGO_URL = "/logo.jpg";
 
 export function LoginPage() {
   const [email, setEmail] = useState('');
@@ -12,12 +12,66 @@ export function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const googleButtonRef = useRef<HTMLDivElement | null>(null);
+  const googleReadyRef = useRef(false);
 
-  const { login } = useAuth();
+  const { login, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
   const from = location.state?.from?.pathname || '/';
+  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID as string;
+
+  const initGoogle = () => {
+    if (googleReadyRef.current) {
+      return true;
+    }
+
+    const google = (window as any).google;
+    if (!google?.accounts?.id || !googleClientId) {
+      return false;
+    }
+
+    google.accounts.id.initialize({
+      client_id: googleClientId,
+      ux_mode: 'popup',
+      callback: async (response: { credential: string }) => {
+        setIsGoogleLoading(true);
+        const result = await loginWithGoogle(response.credential);
+        setIsGoogleLoading(false);
+
+        if (result.success) {
+          navigate(from, { replace: true });
+        } else {
+          setError(result.message || 'Google login failed');
+        }
+      },
+    });
+
+    if (googleButtonRef.current) {
+      google.accounts.id.renderButton(googleButtonRef.current, {
+        theme: 'outline',
+        size: 'large',
+        width: 320,
+      });
+    }
+
+    googleReadyRef.current = true;
+    return true;
+  };
+
+  useEffect(() => {
+    if (!googleClientId) {
+      return;
+    }
+
+    const timeout = window.setTimeout(() => {
+      initGoogle();
+    }, 0);
+
+    return () => window.clearTimeout(timeout);
+  }, [googleClientId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,6 +90,32 @@ export function LoginPage() {
       setError(err?.message || 'Login failed');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = () => {
+    setError('');
+
+    if (!googleClientId) {
+      setError('Google login is not configured');
+      return;
+    }
+
+    const ready = initGoogle();
+    if (!ready) {
+      setError('Google login is not ready yet');
+      return;
+    }
+
+    const button = googleButtonRef.current?.querySelector(
+      'div[role="button"]'
+    ) as HTMLDivElement | null;
+
+    if (button) {
+      button.click();
+    } else {
+      const google = (window as any).google;
+      google?.accounts?.id?.prompt();
     }
   };
 
@@ -68,6 +148,31 @@ export function LoginPage() {
               <p className="text-sm">{error}</p>
             </div>
           )}
+
+          <div className="space-y-4 mb-6">
+            <div
+              ref={googleButtonRef}
+              className="absolute -left-[9999px] -top-[9999px]"
+            />
+            <button
+              type="button"
+              onClick={handleGoogleLogin}
+              disabled={isGoogleLoading}
+              className="w-full py-3 rounded-xl border border-border bg-background text-text-primary font-medium hover:bg-surface-elevated transition-colors"
+            >
+              <img
+                src="/google_icon.png"
+                alt="Google"
+                className="inline-block w-5 h-5 mr-3"
+              />
+              {isGoogleLoading ? 'Connecting...' : 'Continue with Google'}
+            </button>
+            <div className="flex items-center gap-3">
+              <div className="h-px flex-1 bg-border" />
+              <span className="text-xs text-text-muted">or</span>
+              <div className="h-px flex-1 bg-border" />
+            </div>
+          </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
