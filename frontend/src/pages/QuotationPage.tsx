@@ -18,9 +18,11 @@ export function QuotationPage() {
     email: '',
     phone: '',
     company: '',
-    productsOfInterest: '',
     additionalDetails: ''
   });
+  const [items, setItems] = useState<Array<{ description: string; quantity: number; unitPrice: number }>>([
+    { description: 'ORIONX Phantom Pro Laptop', quantity: 1, unitPrice: 1200 }
+  ]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const handleSubmit = async (e: React.FormEvent) => {
@@ -36,7 +38,6 @@ export function QuotationPage() {
       email: '',
       phone: '',
       company: '',
-      productsOfInterest: '',
       additionalDetails: ''
     });
   };
@@ -47,6 +48,107 @@ export function QuotationPage() {
       ...prev,
       [e.target.name]: e.target.value
     }));
+  };
+
+  const addItem = () => {
+    setItems((s) => [...s, { description: '', quantity: 1, unitPrice: 0 }]);
+  };
+
+  const updateItem = (index: number, key: string, value: any) => {
+    setItems((s) => s.map((it, i) => (i === index ? { ...it, [key]: value } : it)));
+  };
+
+  const removeItem = (index: number) => {
+    setItems((s) => s.filter((_, i) => i !== index));
+  };
+
+  // PDF generation using pdf-lib
+  const generatePdf = async () => {
+    // lazy import to keep bundle small
+    const { PDFDocument, rgb, StandardFonts } = await import('pdf-lib');
+
+    // Load the letterhead PDF from public folder
+    const res = await fetch('/orionx.pdf');
+    const letterBytes = await res.arrayBuffer();
+
+    const pdfDoc = await PDFDocument.load(letterBytes);
+    const pages = pdfDoc.getPages();
+    const page = pages[0];
+    const { width, height } = page.getSize();
+
+    const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
+
+    // Compose quote metadata
+    const quoteId = `Q-${Date.now()}`;
+    const date = new Date().toLocaleDateString();
+
+    // Sender address (Orionx)
+    const sender = `ORIONX\n123 Orionx Avenue\nColombo, 00000\nSri Lanka`;
+
+    // Recipient address from form
+    const recipient = `${formData.firstName} ${formData.lastName}\n${formData.company || ''}\n${formData.email}\n${formData.phone}`;
+
+    // Draw metadata
+    const fontSize = 10;
+    page.drawText(`Quotation ID: ${quoteId}`, { x: 50, y: height - 160, size: fontSize, font: helveticaFont, color: rgb(0, 0, 0) });
+    page.drawText(`Date: ${date}`, { x: width - 160, y: height - 160, size: fontSize, font: helveticaFont, color: rgb(0, 0, 0) });
+
+    // Draw addresses
+    page.drawText('From:', { x: 50, y: height - 180, size: fontSize + 1, font: helveticaFont, color: rgb(0, 0, 0) });
+    page.drawText(sender, { x: 50, y: height - 200, size: fontSize, font: helveticaFont, color: rgb(0, 0, 0) });
+
+    page.drawText('To:', { x: width - 260, y: height - 180, size: fontSize + 1, font: helveticaFont, color: rgb(0, 0, 0) });
+    page.drawText(recipient, { x: width - 260, y: height - 200, size: fontSize, font: helveticaFont, color: rgb(0, 0, 0) });
+
+    // Table header
+    const tableTop = height - 260;
+    const startX = 50;
+    const colWidths = [280, 60, 80, 80];
+    const headers = ['Item Description', 'Qty', 'Unit Price', 'Amount'];
+    let x = startX;
+    headers.forEach((h, i) => {
+      page.drawText(h, { x, y: tableTop, size: 10, font: helveticaFont, color: rgb(0, 0, 0) });
+      x += colWidths[i];
+    });
+
+    // Table rows
+    let rowY = tableTop - 18;
+    let total = 0;
+    items.forEach((it) => {
+      const amount = (it.quantity || 0) * (it.unitPrice || 0);
+      total += amount;
+
+      let cx = startX;
+      page.drawText(it.description || '-', { x: cx, y: rowY, size: 9, font: helveticaFont, color: rgb(0, 0, 0) });
+      cx += colWidths[0];
+      page.drawText(String(it.quantity || 0), { x: cx, y: rowY, size: 9, font: helveticaFont, color: rgb(0, 0, 0) });
+      cx += colWidths[1];
+      page.drawText(`$${(it.unitPrice || 0).toFixed(2)}`, { x: cx, y: rowY, size: 9, font: helveticaFont, color: rgb(0, 0, 0) });
+      cx += colWidths[2];
+      page.drawText(`$${amount.toFixed(2)}`, { x: cx, y: rowY, size: 9, font: helveticaFont, color: rgb(0, 0, 0) });
+
+      rowY -= 16;
+    });
+
+    // Total
+    page.drawText('Total:', { x: startX + colWidths[0] + colWidths[1], y: rowY - 8, size: 11, font: helveticaFont, color: rgb(0, 0, 0) });
+    page.drawText(`$${total.toFixed(2)}`, { x: startX + colWidths[0] + colWidths[1] + colWidths[2], y: rowY - 8, size: 11, font: helveticaFont, color: rgb(0, 0, 0) });
+
+  const pdfBytes = await pdfDoc.save();
+
+  // pdf-lib may return an ArrayBufferView whose underlying buffer is not a plain
+  // ArrayBuffer (eg SharedArrayBuffer). Create a copied Uint8Array to ensure a
+  // standard ArrayBuffer is used for the Blob constructor to satisfy TypeScript.
+  const uint8 = Uint8Array.from(pdfBytes as ArrayLike<number>);
+  const blob = new Blob([uint8.buffer], { type: 'application/pdf' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${quoteId}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
   };
   return (
     <div className="min-h-screen bg-background">
@@ -128,10 +230,9 @@ export function QuotationPage() {
                 request and will contact you shortly with a detailed quotation.
               </p>
               <button
-              onClick={() => setIsSubmitted(false)}
-              className="px-8 py-3 bg-primary hover:bg-primary-light text-white font-semibold rounded-lg transition-colors">
-
-                Submit Another Request
+                onClick={() => generatePdf()}
+                className="ml-4 px-8 py-3 bg-secondary hover:bg-secondary-light text-white font-semibold rounded-lg transition-colors">
+                Download Quotation
               </button>
             </motion.div> :
 
@@ -258,28 +359,6 @@ export function QuotationPage() {
                 <div className="space-y-6">
                   <div>
                     <label
-                    htmlFor="productsOfInterest"
-                    className="block text-sm font-medium text-text-secondary mb-2">
-
-                      Products of Interest *
-                    </label>
-                    <textarea
-                    id="productsOfInterest"
-                    name="productsOfInterest"
-                    required
-                    rows={3}
-                    value={formData.productsOfInterest}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 bg-background border border-border rounded-lg text-text-primary focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary resize-none transition-colors"
-                    placeholder="E.g., 10x ORIONX Phantom Pro Laptops, 5x Dell XPS 15">
-                  </textarea>
-                    <p className="text-xs text-text-muted mt-2">
-                      Please list the specific products and quantities you are
-                      interested in.
-                    </p>
-                  </div>
-                  <div>
-                    <label
                     htmlFor="additionalDetails"
                     className="block text-sm font-medium text-text-secondary mb-2">
 
@@ -299,6 +378,26 @@ export function QuotationPage() {
                     </div>
                   </div>
                 </div>
+
+                  {/* Items table */}
+                  <div>
+                    <h3 className="text-lg font-semibold text-text-primary mb-4 flex items-center gap-2">
+                      <PackageIcon className="w-5 h-5 text-primary" />
+                      Items
+                    </h3>
+                    <div className="space-y-2">
+                      {items.map((it, idx) => (
+                        <div key={idx} className="grid grid-cols-5 gap-2 items-center">
+                          <input value={it.description} onChange={(e) => updateItem(idx, 'description', e.target.value)} className="col-span-3 px-3 py-2 border rounded" placeholder="Description" />
+                          <input type="number" value={it.quantity} onChange={(e) => updateItem(idx, 'quantity', Number(e.target.value))} className="px-3 py-2 border rounded" />
+                          <input type="number" value={it.unitPrice} onChange={(e) => updateItem(idx, 'unitPrice', Number(e.target.value))} className="px-3 py-2 border rounded" />
+                        </div>
+                      ))}
+                      <div className="pt-2">
+                        <button type="button" onClick={addItem} className="px-4 py-2 bg-gray-200 rounded">Add Item</button>
+                      </div>
+                    </div>
+                  </div>
               </div>
 
               <div className="pt-4 border-t border-border">
