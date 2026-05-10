@@ -33,6 +33,7 @@ export const products: Product[] = [
   inStock: true,
   stockCount: 15,
   isFeatured: true,
+  isPreOrder: true,
   isOnSale: true,
   discountPercentage: 14,
   tags: ['gaming', 'rtx 4070', 'intel', 'high-performance'],
@@ -100,6 +101,7 @@ export const products: Product[] = [
   inStock: true,
   stockCount: 12,
   isFeatured: true,
+  isPreOrder: true,
   isOnSale: false,
   tags: ['professional', 'apple', 'm3', 'creative'],
   createdAt: '2024-01-20T10:00:00Z'
@@ -170,6 +172,7 @@ export const products: Product[] = [
   inStock: true,
   stockCount: 5,
   isFeatured: true,
+  isPreOrder: true,
   isOnSale: true,
   discountPercentage: 14,
   tags: ['gaming', 'rtx 4080', '4k', 'flagship'],
@@ -204,6 +207,7 @@ export const products: Product[] = [
   inStock: true,
   stockCount: 3,
   isFeatured: true,
+  isPreOrder: true,
   isOnSale: false,
   tags: ['workstation', 'threadripper', 'professional', 'rtx 4090'],
   createdAt: '2024-01-10T10:00:00Z'
@@ -1029,6 +1033,10 @@ export const getProductsByCategory = (category: string): Product[] => {
 
 export const getFeaturedProducts = (): Product[] => {
   return products.filter((p) => p.isFeatured);
+};
+
+export const getPreOrderProducts = (): Product[] => {
+  return products.filter((product) => product.isPreOrder);
 };
 
 export const getOnSaleProducts = (): Product[] => {

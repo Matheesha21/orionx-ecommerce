@@ -2,10 +2,10 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRightIcon } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { getFeaturedProducts } from '../../data/products';
+import { getPreOrderProducts } from '../../data/products';
 import { ProductCard } from '../ui/ProductCard';
 export function FeaturedProducts() {
-  const featuredProducts = getFeaturedProducts().slice(0, 8);
+  const preOrderProducts = getPreOrderProducts().slice(0, 8);
   return (
     <section className="py-16 md:py-24">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -29,14 +29,14 @@ export function FeaturedProducts() {
 
           <div>
             <h2 className="text-3xl md:text-4xl font-bold text-text-primary mb-2">
-              Featured Products
+              Pre-order Products
             </h2>
             <p className="text-text-secondary">
-              Handpicked selection of our best-selling tech
+              Reserve the latest high-demand tech before it ships
             </p>
           </div>
           <Link
-            to="/shop?featured=true"
+            to="/shop"
             className="group flex items-center gap-2 text-primary hover:text-primary-light font-medium transition-colors">
 
             View All
@@ -46,7 +46,7 @@ export function FeaturedProducts() {
 
         {/* Products Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {featuredProducts.map((product, index) =>
+          {preOrderProducts.map((product, index) =>
           <ProductCard key={product.id} product={product} index={index} />
           )}
         </div>

@@ -105,10 +105,14 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
           />
 
           <div className="absolute top-3 left-3 flex flex-col gap-2">
+            {product.isPreOrder ? (
+              <Badge variant="featured">Pre-order</Badge>
+            ) : product.isFeatured ? (
+              <Badge variant="featured">Featured</Badge>
+            ) : null}
             {product.isOnSale && product.discountPercentage && (
               <Badge variant="sale">-{product.discountPercentage}%</Badge>
             )}
-            {product.isFeatured && <Badge variant="featured">Featured</Badge>}
             {!product.inStock && <Badge variant="out-of-stock">Out of Stock</Badge>}
           </div>
 

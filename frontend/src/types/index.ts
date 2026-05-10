@@ -16,6 +16,7 @@ export interface Product {
   inStock: boolean;
   stockCount: number;
   isFeatured: boolean;
+  isPreOrder?: boolean;
   isOnSale: boolean;
   discountPercentage?: number;
   tags: string[];
