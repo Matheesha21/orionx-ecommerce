@@ -12,7 +12,7 @@ const buildMailer = () => {
           console.warn(`[mailer] To: ${message.to}`);
           console.warn(`[mailer] Subject: ${message.subject}`);
           console.warn(`[mailer] Body: ${message.text}`);
-          return { accepted: [message.to], rejected: [] };
+          return { accepted: [], rejected: [message.to], skipped: true };
         },
       };
     }
@@ -36,10 +36,12 @@ const buildMailer = () => {
 export const sendOtpEmail = async (email, otp) => {
   const transporter = buildMailer();
 
-  await transporter.sendMail({
+  const result = await transporter.sendMail({
     from: process.env.SMTP_FROM,
     to: email,
     subject: "Your ORIONX verification code",
     text: `Your ORIONX verification code is ${otp}. It expires in 10 minutes.`,
   });
+
+  return result;
 };

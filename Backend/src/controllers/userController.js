@@ -108,6 +108,7 @@ export const requestEmailOtp = async (req, res) => {
   try {
     const { email } = req.body;
     const normalizedEmail = email?.toLowerCase().trim();
+    const isProduction = process.env.NODE_ENV === "production";
 
     if (!normalizedEmail) {
       return res.status(400).json({ message: "Email is required" });
@@ -128,7 +129,14 @@ export const requestEmailOtp = async (req, res) => {
       expiresAt,
     });
 
-    await sendOtpEmail(normalizedEmail, otp);
+    const deliveryResult = await sendOtpEmail(normalizedEmail, otp);
+
+    if (!isProduction && deliveryResult?.skipped) {
+      return res.status(200).json({
+        message: "OTP generated locally because SMTP is not configured",
+        devOtp: otp,
+      });
+    }
 
     res.status(200).json({ message: "OTP sent" });
   } catch (error) {
