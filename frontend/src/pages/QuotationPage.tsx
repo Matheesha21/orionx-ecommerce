@@ -256,28 +256,65 @@ export function QuotationPage() {
                   Quotation Details
                 </h3>
                 <div className="space-y-6">
-                  <div>
-                    <label
-                    htmlFor="productsOfInterest"
-                    className="block text-sm font-medium text-text-secondary mb-2">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+  {/* Product Selection */}
+  <div>
+    <label
+      htmlFor="productsOfInterest"
+      className="block text-sm font-medium text-text-secondary mb-2"
+    >
+      Select Product *
+    </label>
 
-                      Products of Interest *
-                    </label>
-                    <textarea
-                    id="productsOfInterest"
-                    name="productsOfInterest"
-                    required
-                    rows={3}
-                    value={formData.productsOfInterest}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 bg-background border border-border rounded-lg text-text-primary focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary resize-none transition-colors"
-                    placeholder="E.g., 10x ORIONX Phantom Pro Laptops, 5x Dell XPS 15">
-                  </textarea>
-                    <p className="text-xs text-text-muted mt-2">
-                      Please list the specific products and quantities you are
-                      interested in.
-                    </p>
+    <input
+      list="product-options"
+      id="productsOfInterest"
+      name="productsOfInterest"
+      required
+      value={formData.productsOfInterest}
+      onChange={handleChange}
+      className="w-full px-4 py-3 bg-background border border-border rounded-lg text-text-primary focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
+      placeholder="Select or type a product"
+    />
+
+    <datalist id="product-options">
+      <option value="ORIONX Phantom Pro Laptop" />
+      <option value="Dell XPS 15" />
+      <option value="RTX 4090 Graphics Card" />
+      <option value="AMD Ryzen 9 Processor" />
+      <option value="Corsair DDR5 RAM" />
+      <option value="Samsung NVMe SSD" />
+      <option value="Gaming Monitor 27 inch" />
+      <option value="Mechanical Keyboard" />
+    </datalist>
+
+    <p className="text-xs text-text-muted mt-2">
+      You can select from the list or type a custom product manually.
+    </p>
+  </div>
+
+  {/* Quantity */}
+  <div>
+    <label
+      htmlFor="quantity"
+      className="block text-sm font-medium text-text-secondary mb-2"
+    >
+      Quantity *
+    </label>
+
+    <input
+      type="number"
+      id="quantity"
+      name="quantity"
+      required
+      min="1"
+      value={(formData as any).quantity || ""}
+      onChange={handleChange}
+      className="w-full px-4 py-3 bg-background border border-border rounded-lg text-text-primary focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
+      placeholder="Enter quantity"/>
+              </div>
                   </div>
+                  
                   <div>
                     <label
                     htmlFor="additionalDetails"
