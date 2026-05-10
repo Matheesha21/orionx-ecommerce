@@ -95,15 +95,10 @@ export function RegisterPage() {
     setOtpLoading(true);
 
     try {
-      const response = await axios.post(`${API_BASE_URL}/users/request-otp`, { email });
+      await axios.post(`${API_BASE_URL}/users/request-otp`, { email });
       setOtpSent(true);
       setOtpVerified(false);
-      if (response.data?.devOtp) {
-        setOtp(response.data.devOtp);
-        setOtpStatus(`Development OTP: ${response.data.devOtp}`);
-      } else {
-        setOtpStatus('OTP sent to your email');
-      }
+      setOtpStatus('OTP sent to your email');
       setStep('otp');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to send OTP');

@@ -6,16 +6,16 @@ The REST API server for the OrionX e-commerce platform. Built with Node.js, Expr
 
 ## Tech Stack
 
-| Layer | Technology |
-|---|---|
-| Runtime | Node.js (ESM) |
-| Framework | Express 5 |
-| Primary DB | MongoDB via Mongoose |
-| Vector DB | PostgreSQL + pgvector |
-| AI / LLM | Google Gemini (via LangChain) |
-| Auth | JWT (jsonwebtoken) |
-| File Uploads | Cloudinary + Multer |
-| Environment | dotenv |
+| Layer        | Technology                    |
+| ------------ | ----------------------------- |
+| Runtime      | Node.js (ESM)                 |
+| Framework    | Express 5                     |
+| Primary DB   | MongoDB via Mongoose          |
+| Vector DB    | PostgreSQL + pgvector         |
+| AI / LLM     | Google Gemini (via LangChain) |
+| Auth         | JWT (jsonwebtoken)            |
+| File Uploads | Cloudinary + Multer           |
+| Environment  | dotenv                        |
 
 ---
 
@@ -51,11 +51,13 @@ backend/
 ## Getting Started
 
 ### Prerequisites
+
 - Node.js v18+
 - MongoDB Atlas account (or local MongoDB)
 - PostgreSQL with pgvector extension
 - Google Gemini API key
 - Cloudinary account
+- Gmail account with an app password for SMTP OTP delivery
 
 ### Installation
 
@@ -64,14 +66,16 @@ cd backend
 npm install
 ```
 
-
 ### Environment Variables
 
 Copy `.env.example` to `.env` and fill in your values:
+
 ```bash
 cp .env.example .env
 # Then edit .env with your secrets
 ```
+
+For Gmail SMTP, use your Gmail address as `SMTP_USER`, generate a Google app password, set `SMTP_PASS` to that app password, and keep `SMTP_FROM` aligned with the same Gmail address.
 
 ### Run
 
@@ -90,41 +94,46 @@ Server starts at `http://localhost:5050`
 ## API Endpoints
 
 ### Users — `/api/users`
-| Method | Path | Auth | Description |
-|---|---|---|---|
-| POST | `/register` | Public | Register new user |
-| POST | `/login` | Public | Login and receive JWT |
-| GET | `/profile` | User | Get current user profile |
-| PUT | `/profile` | User | Update profile |
+
+| Method | Path        | Auth   | Description              |
+| ------ | ----------- | ------ | ------------------------ |
+| POST   | `/register` | Public | Register new user        |
+| POST   | `/login`    | Public | Login and receive JWT    |
+| GET    | `/profile`  | User   | Get current user profile |
+| PUT    | `/profile`  | User   | Update profile           |
 
 ### Products — `/api/products`
-| Method | Path | Auth | Description |
-|---|---|---|---|
-| GET | `/` | Public | List all products |
-| GET | `/:id` | Public | Get single product |
-| POST | `/` | Admin | Create product |
-| PUT | `/:id` | Admin | Update product |
-| DELETE | `/:id` | Admin | Delete product |
+
+| Method | Path   | Auth   | Description        |
+| ------ | ------ | ------ | ------------------ |
+| GET    | `/`    | Public | List all products  |
+| GET    | `/:id` | Public | Get single product |
+| POST   | `/`    | Admin  | Create product     |
+| PUT    | `/:id` | Admin  | Update product     |
+| DELETE | `/:id` | Admin  | Delete product     |
 
 ### Orders — `/api/orders`
-| Method | Path | Auth | Description |
-|---|---|---|---|
-| POST | `/` | User | Place a new order |
-| GET | `/myorders` | User | Get current user's orders |
-| GET | `/` | Admin | Get all orders |
-| PUT | `/:id` | Admin | Update order status |
+
+| Method | Path        | Auth  | Description               |
+| ------ | ----------- | ----- | ------------------------- |
+| POST   | `/`         | User  | Place a new order         |
+| GET    | `/myorders` | User  | Get current user's orders |
+| GET    | `/`         | Admin | Get all orders            |
+| PUT    | `/:id`      | Admin | Update order status       |
 
 ### Uploads — `/api/uploads`
-| Method | Path | Auth | Description |
-|---|---|---|---|
-| POST | `/` | Admin | Upload image to Cloudinary |
+
+| Method | Path | Auth  | Description                |
+| ------ | ---- | ----- | -------------------------- |
+| POST   | `/`  | Admin | Upload image to Cloudinary |
 
 ### AI Agent — `/api/agent`
-| Method | Path | Auth | Description |
-|---|---|---|---|
-| POST | `/chat` | User | SSE streaming chat endpoint |
-| POST | `/sync/products` | Admin | Sync products to vector DB |
-| POST | `/sync/documents` | Admin | Sync documents to vector DB |
+
+| Method | Path              | Auth  | Description                 |
+| ------ | ----------------- | ----- | --------------------------- |
+| POST   | `/chat`           | User  | SSE streaming chat endpoint |
+| POST   | `/sync/products`  | Admin | Sync products to vector DB  |
+| POST   | `/sync/documents` | Admin | Sync documents to vector DB |
 
 > See [`src/agent/README.md`](src/agent/README.md) for full AI agent documentation.
 
@@ -139,6 +148,7 @@ Authorization: Bearer <token>
 ```
 
 The JWT payload contains:
+
 ```json
 {
   "id": "userId",
@@ -148,6 +158,7 @@ The JWT payload contains:
 ```
 
 Two guard levels:
+
 - **`protect`** — any authenticated user
 - **`adminOnly`** — requires `user.isAdmin === true`
 
