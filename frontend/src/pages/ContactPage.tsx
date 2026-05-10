@@ -70,8 +70,7 @@ export function ContactPage() {
               delay: 0.1
             }}>
 
-            Have a question about a product, order, or need technical support? support@orionx.com
-            Our team of experts is here to help.
+            Have a question about a product, order, or need technical support? 
           </motion.p>
         </div>
       </div>
