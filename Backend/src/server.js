@@ -1,4 +1,4 @@
-import "dotenv/config"; // Replaces require("dotenv").config()
+import dotenv from "dotenv";
 import express from "express";
 import cors from "cors";
 import mongoose from "mongoose";
@@ -35,6 +35,27 @@ app.use("/api/info", infoRoutes);
 app.use("/api/chatbot", chatbotRoutes);
 app.use("/api/agent/sync", syncRoutes);
 app.use("/api/agent/chat", chatRoutes);
+
+// Load environment variables from CWD (.env) first
+dotenv.config();
+
+// Fallback: if MONGO_URI is still not defined, try loading the `.env` file that
+// lives next to this file (Backend/src/.env). This helps when the developer
+// placed the .env inside `src/` instead of the project root.
+if (!process.env.MONGO_URI) {
+  try {
+    const envPath = new URL("./.env", import.meta.url).pathname; // Backend/src/.env
+    console.log(`ℹ️  MONGO_URI missing from environment — attempting to load ${envPath}`);
+    const result = dotenv.config({ path: envPath });
+    if (result.error) {
+      // ignore: we'll show the same error in connectDB if still missing
+    } else {
+      console.log(`✅ Loaded env from ${envPath}`);
+    }
+  } catch (err) {
+    // ignore — we'll handle missing var in connectDB
+  }
+}
 
 // Initialize Database
 connectDB();
