@@ -1,43 +1,51 @@
+import axios from 'axios';
 import React, { useState } from 'react';
 import {
   MailIcon,
   PhoneIcon,
   MapPinIcon,
   SendIcon,
-  MessageSquareIcon } from
-'lucide-react';
+  MessageSquareIcon,
+} from 'lucide-react';
 import { motion } from 'framer-motion';
+
 export function ContactPage() {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     subject: '',
-    message: ''
+    message: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [error, setError] = useState('');
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    setIsSubmitting(false);
-    setIsSubmitted(true);
-    setFormData({
-      name: '',
-      email: '',
-      subject: '',
-      message: ''
-    });
+    setError('');
+
+    try {
+      await axios.post('http://127.0.0.1:5050/api/contact', formData);
+      setIsSubmitted(true);
+      setFormData({ name: '', email: '', subject: '', message: '' });
+    } catch (err: any) {
+      console.error('Contact form error:', err);
+      setError('Something went wrong. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
+
   const handleChange = (
-  e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
-  {
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     setFormData((prev) => ({
       ...prev,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     }));
   };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -45,32 +53,18 @@ export function ContactPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <motion.h1
             className="text-4xl font-bold text-text-primary mb-4"
-            initial={{
-              opacity: 0,
-              y: 20
-            }}
-            animate={{
-              opacity: 1,
-              y: 0
-            }}>
-
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
             Contact Us
           </motion.h1>
           <motion.p
             className="text-text-secondary max-w-2xl mx-auto"
-            initial={{
-              opacity: 0,
-              y: 20
-            }}
-            animate={{
-              opacity: 1,
-              y: 0
-            }}
-            transition={{
-              delay: 0.1
-            }}>
-
-            Have a question about a product, order, or need technical support? 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+          >
+            Have a question about a product, order, or need technical support?
           </motion.p>
         </div>
       </div>
@@ -148,8 +142,8 @@ export function ContactPage() {
               </p>
               <a
                 href="#faq"
-                className="text-primary hover:text-primary-light text-sm font-medium">
-
+                className="text-primary hover:text-primary-light text-sm font-medium"
+              >
                 View FAQs &rarr;
               </a>
             </div>
@@ -162,18 +156,12 @@ export function ContactPage() {
                 Send us a Message
               </h2>
 
-              {isSubmitted ?
-              <motion.div
-                initial={{
-                  opacity: 0,
-                  scale: 0.95
-                }}
-                animate={{
-                  opacity: 1,
-                  scale: 1
-                }}
-                className="text-center py-12">
-
+              {isSubmitted ? (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="text-center py-12"
+                >
                   <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
                     <SendIcon className="w-8 h-8 text-green-400" />
                   </div>
@@ -185,68 +173,75 @@ export function ContactPage() {
                     back to you shortly.
                   </p>
                   <button
-                  onClick={() => setIsSubmitted(false)}
-                  className="px-6 py-2 border border-border text-text-secondary hover:text-text-primary rounded-lg transition-colors">
-
+                    onClick={() => setIsSubmitted(false)}
+                    className="px-6 py-2 border border-border text-text-secondary hover:text-text-primary rounded-lg transition-colors"
+                  >
                     Send another message
                   </button>
-                </motion.div> :
+                </motion.div>
+              ) : (
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  {/* Error Message */}
+                  {error && (
+                    <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm">
+                      {error}
+                    </div>
+                  )}
 
-              <form onSubmit={handleSubmit} className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <label
-                      htmlFor="name"
-                      className="block text-sm font-medium text-text-secondary mb-2">
-
+                        htmlFor="name"
+                        className="block text-sm font-medium text-text-secondary mb-2"
+                      >
                         Your Name
                       </label>
                       <input
-                      type="text"
-                      id="name"
-                      name="name"
-                      required
-                      value={formData.name}
-                      onChange={handleChange}
-                      className="w-full px-4 py-3 bg-background border border-border rounded-lg text-text-primary focus:outline-none focus:border-primary"
-                      placeholder="John Doe" />
-
+                        type="text"
+                        id="name"
+                        name="name"
+                        required
+                        value={formData.name}
+                        onChange={handleChange}
+                        className="w-full px-4 py-3 bg-background border border-border rounded-lg text-text-primary focus:outline-none focus:border-primary"
+                        placeholder="John Doe"
+                      />
                     </div>
                     <div>
                       <label
-                      htmlFor="email"
-                      className="block text-sm font-medium text-text-secondary mb-2">
-
+                        htmlFor="email"
+                        className="block text-sm font-medium text-text-secondary mb-2"
+                      >
                         Email Address
                       </label>
                       <input
-                      type="email"
-                      id="email"
-                      name="email"
-                      required
-                      value={formData.email}
-                      onChange={handleChange}
-                      className="w-full px-4 py-3 bg-background border border-border rounded-lg text-text-primary focus:outline-none focus:border-primary"
-                      placeholder="john@example.com" />
-
+                        type="email"
+                        id="email"
+                        name="email"
+                        required
+                        value={formData.email}
+                        onChange={handleChange}
+                        className="w-full px-4 py-3 bg-background border border-border rounded-lg text-text-primary focus:outline-none focus:border-primary"
+                        placeholder="john@example.com"
+                      />
                     </div>
                   </div>
 
                   <div>
                     <label
-                    htmlFor="subject"
-                    className="block text-sm font-medium text-text-secondary mb-2">
-
+                      htmlFor="subject"
+                      className="block text-sm font-medium text-text-secondary mb-2"
+                    >
                       Subject
                     </label>
                     <select
-                    id="subject"
-                    name="subject"
-                    required
-                    value={formData.subject}
-                    onChange={handleChange as any}
-                    className="w-full px-4 py-3 bg-background border border-border rounded-lg text-text-primary focus:outline-none focus:border-primary appearance-none">
-
+                      id="subject"
+                      name="subject"
+                      required
+                      value={formData.subject}
+                      onChange={handleChange as any}
+                      className="w-full px-4 py-3 bg-background border border-border rounded-lg text-text-primary focus:outline-none focus:border-primary appearance-none"
+                    >
                       <option value="">Select a subject...</option>
                       <option value="support">Technical Support</option>
                       <option value="order">Order Inquiry</option>
@@ -258,43 +253,43 @@ export function ContactPage() {
 
                   <div>
                     <label
-                    htmlFor="message"
-                    className="block text-sm font-medium text-text-secondary mb-2">
-
+                      htmlFor="message"
+                      className="block text-sm font-medium text-text-secondary mb-2"
+                    >
                       Message
                     </label>
                     <textarea
-                    id="message"
-                    name="message"
-                    required
-                    rows={6}
-                    value={formData.message}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 bg-background border border-border rounded-lg text-text-primary focus:outline-none focus:border-primary resize-none"
-                    placeholder="How can we help you?">
-                  </textarea>
+                      id="message"
+                      name="message"
+                      required
+                      rows={6}
+                      value={formData.message}
+                      onChange={handleChange}
+                      className="w-full px-4 py-3 bg-background border border-border rounded-lg text-text-primary focus:outline-none focus:border-primary resize-none"
+                      placeholder="How can we help you?"
+                    />
                   </div>
 
                   <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="w-full py-4 bg-primary hover:bg-primary-light text-white font-semibold rounded-lg flex items-center justify-center gap-2 disabled:opacity-50 transition-colors">
-
-                    {isSubmitting ?
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> :
-
-                  <>
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="w-full py-4 bg-primary hover:bg-primary-light text-white font-semibold rounded-lg flex items-center justify-center gap-2 disabled:opacity-50 transition-colors"
+                  >
+                    {isSubmitting ? (
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    ) : (
+                      <>
                         Send Message
                         <SendIcon className="w-4 h-4" />
                       </>
-                  }
+                    )}
                   </button>
                 </form>
-              }
+              )}
             </div>
           </div>
         </div>
       </div>
-    </div>);
-
+    </div>
+  );
 }
