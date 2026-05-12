@@ -30,3 +30,38 @@ export const sendOtpEmail = async (email, otp) => {
     text: `Your ORIONX verification code is ${otp}. It expires in 10 minutes.`,
   });
 };
+
+export const sendNewsletter = async (email, products = [], extras = {}) => {
+  const transporter = buildMailer();
+
+  const subject = extras.subject || "Latest from ORIONX - New products & deals";
+
+  const htmlBody = `
+    <div style="font-family:Arial,Helvetica,sans-serif;color:#111;">
+      <h2>Latest Products & Discounts from ORIONX</h2>
+      <p>Hi there — thanks for subscribing! Here are our latest products and current discounts.</p>
+      <ul>
+        ${products
+          .map(
+            (p) => `
+          <li style="margin-bottom:10px">
+            <strong>${p.name}</strong><br/>
+            ${p.shortDescription || ''}<br/>
+            Price: LKR ${p.price?.toFixed ? p.price.toFixed(2) : p.price}
+            ${p.isOnSale ? `<br/><em>Discount: ${p.discountPercentage || 0}%</em>` : ''}
+          </li>`
+          )
+          .join('')}
+      </ul>
+      <p>Visit our store to shop these items: <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}">ORIONX Store</a></p>
+      <p style="font-size:12px;color:#666">You can unsubscribe at any time.</p>
+    </div>
+  `;
+
+  return transporter.sendMail({
+    from: process.env.SMTP_FROM,
+    to: email,
+    subject,
+    html: htmlBody,
+  });
+};

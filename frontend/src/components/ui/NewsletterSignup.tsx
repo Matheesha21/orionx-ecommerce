@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { SendIcon, CheckCircleIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { subscriptionsApi } from '../../services/api';
 export function NewsletterSignup() {
   const [email, setEmail] = useState('');
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -9,10 +10,16 @@ export function NewsletterSignup() {
     e.preventDefault();
     if (!email.trim()) return;
     setIsLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setIsLoading(false);
-    setIsSubmitted(true);
-    setEmail('');
+    try {
+      await subscriptionsApi.subscribe(email.trim());
+      setIsSubmitted(true);
+      setEmail('');
+    } catch (err: any) {
+      console.error('Subscribe failed:', err);
+      alert(err?.message || 'Failed to subscribe');
+    } finally {
+      setIsLoading(false);
+    }
   };
   return (
     <section className="relative py-16 overflow-hidden bg-[#0A2540]">

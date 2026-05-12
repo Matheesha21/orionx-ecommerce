@@ -207,3 +207,12 @@ export const quotationApi = {
   getAll: (): Promise<ApiResponse<QuotationRequest[]>> =>
   request('/quotations')
 };
+
+// ─── Subscriptions API ───────────────────────────────────────
+export const subscriptionsApi = {
+  subscribe: (email: string) =>
+    request('/subscriptions', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    }),
+};

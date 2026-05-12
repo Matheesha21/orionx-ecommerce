@@ -13,6 +13,7 @@ import infoRoutes from "./routes/infoRoutes.js";
 import chatbotRoutes from "./routes/chatbotRoutes.js";
 import syncRoutes from "./agent/routes/syncRoutes.js";
 import chatRoutes from "./agent/routes/chatRoutes.js";
+import subscriptionRoutes from "./routes/subscriptionRoutes.js";
 
 const app = express();
 
@@ -35,6 +36,7 @@ app.use("/api/info", infoRoutes);
 app.use("/api/chatbot", chatbotRoutes);
 app.use("/api/agent/sync", syncRoutes);
 app.use("/api/agent/chat", chatRoutes);
+app.use("/api/subscriptions", subscriptionRoutes);
 
 // Initialize Database
 connectDB();
