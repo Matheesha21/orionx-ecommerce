@@ -97,7 +97,7 @@ export function AdminDashboardPage() {
       doc.setFontSize(10);
       doc.text(`Generated: ${generatedAt}`, 14, 26);
       doc.text(`Recent orders included: ${recentOrders.length}`, 14, 32);
-      doc.text(`Total revenue: $${totalRevenue.toFixed(2)}`, 14, 38);
+      doc.text(`Total revenue: LKR ${totalRevenue.toFixed(2)}`, 14, 38);
       doc.text(`Paid orders: ${paidOrders}`, 14, 44);
       doc.text(`Delivered orders: ${deliveredOrders}`, 14, 50);
 
@@ -109,7 +109,7 @@ export function AdminDashboardPage() {
           order.user?.username || order.user?.name || "Unknown User",
           new Date(order.createdAt).toLocaleDateString(),
           order.isDelivered ? "Delivered" : order.isPaid ? "Paid" : "Pending",
-          `$${order.totalPrice.toFixed(2)}`,
+          `LKR ${order.totalPrice.toFixed(2)}`,
         ]),
         styles: {
           fontSize: 9,
@@ -193,7 +193,7 @@ export function AdminDashboardPage() {
   const stats = [
     {
       label: "Total Revenue",
-      value: `$${totalRevenue.toFixed(2)}`,
+      value: `LKR ${totalRevenue.toFixed(2)}`,
       icon: DollarSignIcon,
       trend: `${orders.length} orders`,
       color: "text-green-400",
@@ -365,7 +365,7 @@ export function AdminDashboardPage() {
                         </td>
 
                         <td className="py-4 text-text-primary font-medium text-right">
-                          ${order.totalPrice.toFixed(2)}
+                          LKR {order.totalPrice.toFixed(2)}
                         </td>
 
                         <td className="py-4 text-center">
