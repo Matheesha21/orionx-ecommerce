@@ -31,7 +31,7 @@ export function Navbar() {
   const [wishlistCount, setWishlistCount] = useState(0);
 
   const location = useLocation();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isAdmin } = useAuth();
   const userInitial = (user?.name || "").trim().charAt(0).toUpperCase();
 
   const fetchCounts = async () => {
@@ -137,6 +137,15 @@ export function Navbar() {
               )}
             </Link>
 
+            {isAuthenticated && isAdmin && (
+              <Link
+                to="/admin"
+                className="hidden md:inline-flex items-center px-3 py-2 rounded-lg text-sm font-semibold bg-primary/10 text-primary hover:bg-primary/15 transition-colors"
+              >
+                Admin Panel
+              </Link>
+            )}
+
             <div className="relative">
               {isAuthenticated ? (
                 <Link
@@ -233,6 +242,15 @@ export function Navbar() {
                       {link.label}
                     </Link>
                   ))}
+
+                  {isAuthenticated && isAdmin && (
+                    <Link
+                      to="/admin"
+                      className="block px-4 py-3 rounded-lg text-base font-medium bg-primary/10 text-primary hover:bg-primary/15 transition-colors"
+                    >
+                      Admin Panel
+                    </Link>
+                  )}
                 </div>
               </div>
             </motion.div>

@@ -39,8 +39,23 @@ const AUTH_STORAGE_KEY = "orionx-auth";
 const TOKEN_STORAGE_KEY = "token";
 const API_BASE_URL = "http://127.0.0.1:5050/api";
 
+const getStoredUser = (): AuthUser | null => {
+  const storedUser = localStorage.getItem(AUTH_STORAGE_KEY);
+
+  if (!storedUser) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(storedUser) as AuthUser;
+  } catch {
+    localStorage.removeItem(AUTH_STORAGE_KEY);
+    return null;
+  }
+};
+
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(() => getStoredUser());
 
   useEffect(() => {
     const validateSession = async () => {
