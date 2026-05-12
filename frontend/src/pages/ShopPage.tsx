@@ -59,6 +59,13 @@ export function ShopPage() {
     }
   };
 
+  // Listen for URL changes and sync state
+  useEffect(() => {
+    setSearchTerm(searchParams.get("search") || "");
+    setSelectedCategory(searchParams.get("category") || "");
+    setSortBy(searchParams.get("sort") || "newest");
+  }, [searchParams]);
+
   useEffect(() => {
     const params: Record<string, string> = {};
 
