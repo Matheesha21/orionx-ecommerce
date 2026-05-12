@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import {
   UsersIcon,
@@ -8,6 +8,8 @@ import {
   TrendingUpIcon,
   AlertTriangleIcon,
 } from "lucide-react";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import { useAuth } from "../context/AuthContext";
 import { products } from "../data/products";
 import { ordersApi } from "../services/orderService";
@@ -33,6 +35,7 @@ export function AdminDashboardPage() {
   const [loadingOrders, setLoadingOrders] = useState(true);
   const [ordersError, setOrdersError] = useState("");
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [reportLoading, setReportLoading] = useState(false);
 
   const fetchOrders = async () => {
     try {
@@ -48,11 +51,88 @@ export function AdminDashboardPage() {
 
       const data = await ordersApi.getAllOrders(token);
       setOrders(data);
+      return data;
     } catch (error: any) {
       console.error("Admin orders error:", error.response?.data || error.message);
       setOrdersError(error.response?.data?.message || "Failed to load orders");
+      return [];
     } finally {
       setLoadingOrders(false);
+    }
+  };
+
+  const handleGenerateReport = async () => {
+    try {
+      setReportLoading(true);
+
+      const reportOrders =
+        orders.length > 0
+          ? orders
+          : await fetchOrders();
+
+      const recentOrders = [...reportOrders]
+        .sort(
+          (left, right) =>
+            new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime()
+        )
+        .slice(0, 10);
+
+      if (recentOrders.length === 0) {
+        setOrdersError("No orders available to generate a report.");
+        return;
+      }
+
+      const doc = new jsPDF();
+      const generatedAt = new Date().toLocaleString();
+      const totalRevenue = recentOrders.reduce(
+        (sum, order) => sum + (order.totalPrice || 0),
+        0
+      );
+      const paidOrders = recentOrders.filter((order) => order.isPaid).length;
+      const deliveredOrders = recentOrders.filter((order) => order.isDelivered).length;
+
+      doc.setFontSize(18);
+      doc.text("ORIONX Admin Orders Report", 14, 18);
+
+      doc.setFontSize(10);
+      doc.text(`Generated: ${generatedAt}`, 14, 26);
+      doc.text(`Recent orders included: ${recentOrders.length}`, 14, 32);
+      doc.text(`Total revenue: $${totalRevenue.toFixed(2)}`, 14, 38);
+      doc.text(`Paid orders: ${paidOrders}`, 14, 44);
+      doc.text(`Delivered orders: ${deliveredOrders}`, 14, 50);
+
+      autoTable(doc, {
+        startY: 58,
+        head: [["Order ID", "Customer", "Date", "Status", "Total"]],
+        body: recentOrders.map((order) => [
+          order._id,
+          order.user?.username || order.user?.name || "Unknown User",
+          new Date(order.createdAt).toLocaleDateString(),
+          order.isDelivered ? "Delivered" : order.isPaid ? "Paid" : "Pending",
+          `$${order.totalPrice.toFixed(2)}`,
+        ]),
+        styles: {
+          fontSize: 9,
+          cellPadding: 3,
+        },
+        headStyles: {
+          fillColor: [14, 165, 233],
+          textColor: [255, 255, 255],
+        },
+        alternateRowStyles: {
+          fillColor: [248, 250, 252],
+        },
+      });
+
+      const fileName = `orionx-orders-report-${new Date()
+        .toISOString()
+        .slice(0, 10)}.pdf`;
+      doc.save(fileName);
+    } catch (error) {
+      console.error("Generate report failed:", error);
+      setOrdersError("Failed to generate report.");
+    } finally {
+      setReportLoading(false);
     }
   };
 
@@ -168,8 +248,12 @@ export function AdminDashboardPage() {
               Manage Products
             </Link>
 
-            <button className="px-4 py-2 bg-surface border border-border hover:bg-surface-elevated text-text-primary font-semibold rounded-lg transition-colors">
-              Generate Report
+            <button
+              onClick={handleGenerateReport}
+              disabled={reportLoading}
+              className="px-4 py-2 bg-surface border border-border hover:bg-surface-elevated text-text-primary font-semibold rounded-lg transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {reportLoading ? "Generating..." : "Generate Report"}
             </button>
           </div>
         </div>
