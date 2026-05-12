@@ -86,7 +86,7 @@ export function Navbar() {
     >
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 md:h-20">
-          <Link to="/" className="flex-shrink-0">
+          <Link to="/" className="flex-shrink-0 mr-8">
             <img src={LOGO_URL} alt="ORIONX" className="h-8 md:h-10 w-auto" />
           </Link>
 
