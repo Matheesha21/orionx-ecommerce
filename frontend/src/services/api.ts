@@ -215,4 +215,11 @@ export const subscriptionsApi = {
       method: 'POST',
       body: JSON.stringify({ email }),
     }),
+  unsubscribe: (email: string) =>
+    request('/subscriptions/unsubscribe', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    }),
+  getAll: () => request('/subscriptions'),
+  delete: (id: string) => request(`/subscriptions/${id}`, { method: 'DELETE' }),
 };

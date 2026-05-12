@@ -19,6 +19,8 @@ import { RegisterPage } from './pages/RegisterPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { OrderDetailsPage } from './pages/OrderDetailsPage';
 import { AdminDashboardPage } from './pages/AdminDashboardPage';
+import { AdminSubscribersPage } from './pages/AdminSubscribersPage';
+import UnsubscribePage from './pages/UnsubscribePage';
 import { AboutPage } from './pages/AboutPage';
 import { ContactPage } from './pages/ContactPage';
 import { QuotationPage } from './pages/QuotationPage';
@@ -52,9 +54,11 @@ export function App() {
                   <Route path="/about" element={<AboutPage />} />
                   <Route path="/contact" element={<ContactPage />} />
                   <Route path="/quote" element={<QuotationPage />} />
+                  <Route path="/unsubscribe" element={<UnsubscribePage />} />
                   <Route path="/admin/products/new" element={<AdminAddProductPage />} />
                   <Route path="/admin/products" element={<AdminProductsPage />} />
                   <Route path="/admin/products/:id/edit" element={<AdminEditProductPage />} />
+                  <Route path="/admin/subscribers" element={<AdminSubscribersPage />} />
                 </Routes>
               </Layout>
             </Router>

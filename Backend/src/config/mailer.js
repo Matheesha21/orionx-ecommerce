@@ -36,6 +36,9 @@ export const sendNewsletter = async (email, products = [], extras = {}) => {
 
   const subject = extras.subject || "Latest from ORIONX - New products & deals";
 
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+  const unsubscribeUrl = `${frontendUrl}/unsubscribe?email=${encodeURIComponent(email)}`;
+
   const htmlBody = `
     <div style="font-family:Arial,Helvetica,sans-serif;color:#111;">
       <h2>Latest Products & Discounts from ORIONX</h2>
@@ -53,8 +56,8 @@ export const sendNewsletter = async (email, products = [], extras = {}) => {
           )
           .join('')}
       </ul>
-      <p>Visit our store to shop these items: <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}">ORIONX Store</a></p>
-      <p style="font-size:12px;color:#666">You can unsubscribe at any time.</p>
+      <p>Visit our store to shop these items: <a href="${frontendUrl}">ORIONX Store</a></p>
+      <p style="font-size:12px;color:#666">If you'd like to unsubscribe, <a href="${unsubscribeUrl}">click here</a>.</p>
     </div>
   `;
 

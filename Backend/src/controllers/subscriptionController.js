@@ -36,3 +36,47 @@ export const subscribe = async (req, res) => {
     return res.status(500).json({ message: 'Failed to subscribe' });
   }
 };
+
+export const unsubscribe = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ message: 'Email is required' });
+
+    const normalized = email.toLowerCase().trim();
+    const removed = await Subscriber.findOneAndDelete({ email: normalized });
+
+    if (!removed) {
+      return res.status(404).json({ message: 'Subscriber not found' });
+    }
+
+    return res.status(200).json({ message: 'Unsubscribed successfully' });
+  } catch (error) {
+    console.error('Unsubscribe error:', error);
+    return res.status(500).json({ message: 'Failed to unsubscribe' });
+  }
+};
+
+export const listSubscribers = async (req, res) => {
+  try {
+    const subs = await Subscriber.find({}).sort({ createdAt: -1 }).lean();
+    return res.status(200).json({ subscribers: subs });
+  } catch (error) {
+    console.error('List subscribers error:', error);
+    return res.status(500).json({ message: 'Failed to list subscribers' });
+  }
+};
+
+export const deleteSubscriber = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!id) return res.status(400).json({ message: 'Subscriber id required' });
+
+    const removed = await Subscriber.findByIdAndDelete(id);
+    if (!removed) return res.status(404).json({ message: 'Subscriber not found' });
+
+    return res.status(200).json({ message: 'Subscriber removed' });
+  } catch (error) {
+    console.error('Delete subscriber error:', error);
+    return res.status(500).json({ message: 'Failed to delete subscriber' });
+  }
+};
