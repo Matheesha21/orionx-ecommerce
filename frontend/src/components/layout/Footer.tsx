@@ -19,23 +19,23 @@ const footerLinks = {
   },
   {
     label: 'Laptops',
-    href: '/shop?category=laptops'
+    href: '/shop?category=Laptops'
   },
   {
     label: 'Desktop PCs',
-    href: '/shop?category=desktops'
+    href: '/shop?category=Desktop PCs'
   },
   {
     label: 'Graphics Cards',
-    href: '/shop?category=gpus'
+    href: '/shop?category=Graphics Cards'
   },
   {
     label: 'Processors',
-    href: '/shop?category=cpus'
+    href: '/shop?category=Processors'
   },
   {
     label: 'Monitors',
-    href: '/shop?category=monitors'
+    href: '/shop?category=Monitors'
   }],
 
   support: [
