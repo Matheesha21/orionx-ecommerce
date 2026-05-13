@@ -19,26 +19,51 @@ export function QuotationPage() {
     phone: '',
     company: '',
     productsOfInterest: '',
+    quantity: '',
     additionalDetails: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [error, setError] = useState('');
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    setIsSubmitting(false);
-    setIsSubmitted(true);
-    setFormData({
-      firstName: '',
-      lastName: '',
-      email: '',
-      phone: '',
-      company: '',
-      productsOfInterest: '',
-      additionalDetails: ''
-    });
+    setError('');
+
+    try {
+      const response = await fetch('http://localhost:5050/api/quotations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...formData,
+          quantity: parseInt(formData.quantity) || 1,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to submit quotation');
+      }
+
+      setIsSubmitting(false);
+      setIsSubmitted(true);
+      setFormData({
+        firstName: '',
+        lastName: '',
+        email: '',
+        phone: '',
+        company: '',
+        productsOfInterest: '',
+        quantity: '',
+        additionalDetails: ''
+      });
+    } catch (err: any) {
+      setIsSubmitting(false);
+      setError(err.message || 'Failed to submit quotation request');
+      console.error('Quotation submission error:', err);
+    }
   };
   const handleChange = (
   e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
@@ -105,6 +130,11 @@ export function QuotationPage() {
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="bg-surface border border-border rounded-2xl p-8 md:p-12 shadow-sm">
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-red-700">{error}</p>
+            </div>
+          )}
           {isSubmitted ?
           <motion.div
             initial={{

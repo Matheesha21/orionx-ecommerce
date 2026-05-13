@@ -68,3 +68,37 @@ export const sendNewsletter = async (email, products = [], extras = {}) => {
     html: htmlBody,
   });
 };
+
+export const sendQuotationConfirmation = async (email, firstName, product, quantity) => {
+  const transporter = buildMailer();
+
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+
+  const htmlBody = `
+    <div style="font-family:Arial,Helvetica,sans-serif;color:#111;">
+      <h2>Quotation Request Received</h2>
+      <p>Hi ${firstName},</p>
+      <p>Thank you for submitting your quotation request. We've received your inquiry and our sales team will review it shortly.</p>
+      <div style="background-color:#f5f5f5;padding:15px;border-radius:5px;margin:20px 0;">
+        <h3 style="margin-top:0;">Your Request Details:</h3>
+        <p><strong>Product:</strong> ${product}</p>
+        <p><strong>Quantity:</strong> ${quantity}</p>
+      </div>
+      <p>We will get back to you within 24 hours with a customized quotation. If you have any urgent questions, feel free to contact us.</p>
+      <p>Best regards,<br/>ORIONX Sales Team</p>
+      <p style="font-size:12px;color:#666;margin-top:30px;">
+        <strong>ORIONX</strong><br/>
+        Email: orionx2101@gmail.com<br/>
+        Phone: +94 756498525<br/>
+        Location: Panagoda, Colombo, Sri Lanka
+      </p>
+    </div>
+  `;
+
+  return transporter.sendMail({
+    from: process.env.SMTP_FROM,
+    to: email,
+    subject: 'Quotation Request Received - ORIONX',
+    html: htmlBody,
+  });
+};

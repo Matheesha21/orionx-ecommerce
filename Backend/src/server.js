@@ -14,6 +14,7 @@ import chatbotRoutes from "./routes/chatbotRoutes.js";
 import syncRoutes from "./agent/routes/syncRoutes.js";
 import chatRoutes from "./agent/routes/chatRoutes.js";
 import subscriptionRoutes from "./routes/subscriptionRoutes.js";
+import quotationRoutes from "./routes/quotationRoutes.js";
 
 const app = express();
 
@@ -37,6 +38,7 @@ app.use("/api/chatbot", chatbotRoutes);
 app.use("/api/agent/sync", syncRoutes);
 app.use("/api/agent/chat", chatRoutes);
 app.use("/api/subscriptions", subscriptionRoutes);
+app.use("/api/quotations", quotationRoutes);
 
 // Initialize Database
 connectDB();

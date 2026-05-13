@@ -20,6 +20,7 @@ import { ProfilePage } from './pages/ProfilePage';
 import { OrderDetailsPage } from './pages/OrderDetailsPage';
 import { AdminDashboardPage } from './pages/AdminDashboardPage';
 import { AdminSubscribersPage } from './pages/AdminSubscribersPage';
+import { AdminQuotationsPage } from './pages/AdminQuotationsPage';
 import UnsubscribePage from './pages/UnsubscribePage';
 import { AboutPage } from './pages/AboutPage';
 import { ContactPage } from './pages/ContactPage';
@@ -59,6 +60,7 @@ export function App() {
                   <Route path="/admin/products" element={<AdminProductsPage />} />
                   <Route path="/admin/products/:id/edit" element={<AdminEditProductPage />} />
                   <Route path="/admin/subscribers" element={<AdminSubscribersPage />} />
+                  <Route path="/admin/quotations" element={<AdminQuotationsPage />} />
                 </Routes>
               </Layout>
             </Router>
