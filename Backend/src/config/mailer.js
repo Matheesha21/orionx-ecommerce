@@ -69,7 +69,7 @@ export const sendNewsletter = async (email, products = [], extras = {}) => {
   });
 };
 
-export const sendQuotationConfirmation = async (email, firstName, product, quantity) => {
+export const sendQuotationConfirmation = async (email, firstName, product, quantity, attachmentPath) => {
   const transporter = buildMailer();
 
   const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
@@ -95,10 +95,21 @@ export const sendQuotationConfirmation = async (email, firstName, product, quant
     </div>
   `;
 
-  return transporter.sendMail({
+  const mailOptions = {
     from: process.env.SMTP_FROM,
     to: email,
     subject: 'Quotation Request Received - ORIONX',
     html: htmlBody,
-  });
+  };
+
+  if (attachmentPath) {
+    mailOptions.attachments = [
+      {
+        filename: `quotation_${Date.now()}.pdf`,
+        path: attachmentPath,
+      },
+    ];
+  }
+
+  return transporter.sendMail(mailOptions);
 };

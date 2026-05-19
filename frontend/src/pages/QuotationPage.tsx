@@ -57,11 +57,33 @@ export function QuotationPage() {
       // capture submitted data for PDF generation
       const submittedData = { ...formData, quantity: parseInt(formData.quantity) || 1 };
 
-      // generate PDF and trigger download for the user
+      // Prefer server-generated PDF when available: download /api/quotations/:id/pdf
       try {
-        generateQuotationPdf(submittedData);
-      } catch (pdfErr) {
-        console.error('PDF generation failed:', pdfErr);
+        const resJson = await response.json();
+        const quotationId = resJson.quotationId;
+        if (quotationId) {
+          const pdfResp = await fetch(`http://localhost:5050/api/quotations/${quotationId}/pdf`);
+          if (pdfResp.ok) {
+            const blob = await pdfResp.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `quotation_${quotationId}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+          } else {
+            // fallback to client PDF generation
+            try { generateQuotationPdf(submittedData); } catch (_) {}
+          }
+        } else {
+          // fallback: server didn't return id
+          try { generateQuotationPdf(submittedData); } catch (_) {}
+        }
+      } catch (err) {
+        console.error('Failed to download server PDF, falling back to client PDF', err);
+        try { generateQuotationPdf(submittedData); } catch (_) {}
       }
 
       setIsSubmitting(false);

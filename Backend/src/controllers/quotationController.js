@@ -1,5 +1,6 @@
 import Quotation from '../models/Quotation.js';
 import { sendQuotationConfirmation } from '../config/mailer.js';
+import { generateQuotationPdf } from '../utils/pdfGenerator.js';
 
 export const createQuotation = async (req, res) => {
   try {
@@ -26,7 +27,15 @@ export const createQuotation = async (req, res) => {
 
     // Send confirmation email to customer
     try {
-      await sendQuotationConfirmation(email, firstName, productsOfInterest, quantity);
+      // generate server-side PDF and attach
+      let pdfPath;
+      try {
+        pdfPath = await generateQuotationPdf(quotation);
+      } catch (genErr) {
+        console.error('PDF generation error:', genErr);
+      }
+
+      await sendQuotationConfirmation(email, firstName, productsOfInterest, quantity, pdfPath);
     } catch (emailError) {
       console.error('Failed to send quotation confirmation email:', emailError);
       // Don't fail the API call if email fails
