@@ -9,7 +9,7 @@ const connectDB = async () => {
         "❌ MONGO_URI is not defined. Make sure you have a .env file in the Backend folder with MONGO_URI set, or export the variable in your environment. You can copy .env.example -> .env and fill in the details."
       );
       // Exit early to avoid passing `undefined` to mongoose.connect
-      process.exit(1);
+      return false;
     }
 
     // Pass URI explicitly. With modern mongoose (v6+) and mongodb driver v4+ these
@@ -17,9 +17,11 @@ const connectDB = async () => {
     await mongoose.connect(uri);
 
     console.log("✅ MongoDB connected successfully");
+    return true;
   } catch (error) {
     console.error("❌ Database connection failed:", error);
-    process.exit(1);
+    // Keep the app alive so routes can fall back to local storage when Atlas is unreachable.
+    return false;
   }
 };
 

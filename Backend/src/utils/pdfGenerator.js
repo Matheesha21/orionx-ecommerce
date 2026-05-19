@@ -1,126 +1,117 @@
 import fs from 'fs';
 import path from 'path';
-import { spawnSync } from 'child_process';
-import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 
 const QUOTATIONS_DIR = path.join(process.cwd(), 'backend', 'uploads', 'quotations');
 
-export const ensureQuotationsDir = () => {
+const ensureQuotationsDir = () => {
   if (!fs.existsSync(QUOTATIONS_DIR)) {
     fs.mkdirSync(QUOTATIONS_DIR, { recursive: true });
   }
 };
 
-// Convert DOCX letterhead (frontend/public/Letterheadformat.docx) to PDF using LibreOffice
-const convertDocxToPdf = (docxPath) => {
-  try {
-    const outDir = path.dirname(docxPath);
-    const result = spawnSync('soffice', ['--headless', '--convert-to', 'pdf', '--outdir', outDir, docxPath], {
-      stdio: 'ignore',
-      timeout: 20000,
-    });
+const escapePdfText = (value = '') =>
+  String(value)
+    .replace(/\\/g, '\\\\')
+    .replace(/\(/g, '\\(')
+    .replace(/\)/g, '\\)');
 
-    const baseName = path.basename(docxPath, path.extname(docxPath));
-    const generatedPdf = path.join(outDir, `${baseName}.pdf`);
+const buildPdfContentStream = (quotation) => {
+  const lines = [
+    'ORIONX QUOTATION REQUEST CONFIRMATION',
+    '',
+    `Date: ${new Date().toLocaleDateString()}`,
+    '',
+    'CUSTOMER DETAILS:',
+    `Name: ${quotation.firstName || ''} ${quotation.lastName || ''}`.trim(),
+    `Email: ${quotation.email || ''}`,
+    `Phone: ${quotation.phone || ''}`,
+    `Company: ${quotation.company || 'N/A'}`,
+    '',
+    'QUOTATION DETAILS:',
+    `Product: ${quotation.productsOfInterest || ''}`,
+    `Quantity: ${quotation.quantity || ''}`,
+    '',
+    'ADDITIONAL DETAILS:',
+    quotation.additionalDetails || 'None',
+    '',
+    'Thank you for your interest in ORIONX.',
+    'Our sales team will review your request and contact you shortly.',
+    '',
+    'ORIONX Sales Team',
+    'orionx2101@gmail.com',
+    '+94 756498525',
+    'Panagoda, Colombo, Sri Lanka',
+  ];
 
-    if (fs.existsSync(generatedPdf)) {
-      return generatedPdf;
+  let y = 780;
+  const parts = ['BT', '/F1 14 Tf', '50 790 Td'];
+
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = escapePdfText(lines[index]);
+    if (index === 0) {
+      parts.push(`(${line}) Tj`);
+      parts.push('0 -22 Td');
+      y -= 22;
+      continue;
     }
-  } catch (err) {
-    console.warn('LibreOffice conversion failed:', err?.message || err);
+
+    if (line === '') {
+      parts.push('0 -12 Td');
+      y -= 12;
+      continue;
+    }
+
+    parts.push(`/F1 ${index < 5 ? 12 : 10} Tf`);
+    parts.push(`(${line}) Tj`);
+    parts.push('0 -14 Td');
+    y -= 14;
+
+    if (y < 60) {
+      break;
+    }
   }
 
-  return null;
+  parts.push('ET');
+  return parts.join('\n');
 };
 
-// Overlay quotation details onto a PDF (letterhead) or create a new PDF if no template
+const buildMinimalPdf = (quotation) => {
+  const contentStream = buildPdfContentStream(quotation);
+  const contentLength = Buffer.byteLength(contentStream, 'utf8');
+
+  const objects = [
+    '1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj\n',
+    '2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj\n',
+    '3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >> endobj\n',
+    '4 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> endobj\n',
+    `5 0 obj << /Length ${contentLength} >> stream\n${contentStream}\nendstream endobj\n`,
+  ];
+
+  let pdf = '%PDF-1.4\n';
+  const offsets = ['0000000000 65535 f \n'];
+  let currentOffset = Buffer.byteLength(pdf, 'utf8');
+
+  for (const object of objects) {
+    offsets.push(`${String(currentOffset).padStart(10, '0')} 00000 n \n`);
+    pdf += object;
+    currentOffset += Buffer.byteLength(object, 'utf8');
+  }
+
+  const xrefOffset = currentOffset;
+  pdf += `xref\n0 ${objects.length + 1}\n`;
+  pdf += offsets.join('');
+  pdf += `trailer << /Size ${objects.length + 1} /Root 1 0 R >>\n`;
+  pdf += `startxref\n${xrefOffset}\n%%EOF\n`;
+
+  return Buffer.from(pdf, 'utf8');
+};
+
 export const generateQuotationPdf = async (quotation) => {
   ensureQuotationsDir();
 
   const id = quotation._id || new Date().getTime();
   const outPath = path.join(QUOTATIONS_DIR, `quotation_${id}.pdf`);
-
-  // Try to use letterhead template from frontend/public
-  const docxTemplate = path.join(process.cwd(), 'frontend', 'public', 'Letterheadformat.docx');
-  let basePdfPath = null;
-
-  if (fs.existsSync(docxTemplate)) {
-    basePdfPath = convertDocxToPdf(docxTemplate);
-  }
-
-  if (basePdfPath && fs.existsSync(basePdfPath)) {
-    // Load the base PDF and add text
-    const existingPdfBytes = fs.readFileSync(basePdfPath);
-    const pdfDoc = await PDFDocument.load(existingPdfBytes);
-    const pages = pdfDoc.getPages();
-    const firstPage = pages[0];
-    const { width, height } = firstPage.getSize();
-
-    const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-    const fontSize = 11;
-    const marginLeft = 40;
-    let y = height - 120;
-
-    firstPage.drawText(`${quotation.firstName || ''} ${quotation.lastName || ''}`, {
-      x: marginLeft,
-      y,
-      size: fontSize,
-      font,
-      color: rgb(0, 0, 0),
-    });
-
-    y -= 16;
-    firstPage.drawText(`${quotation.company || ''}`, { x: marginLeft, y, size: fontSize, font });
-    y -= 16;
-    firstPage.drawText(`${quotation.email || ''} • ${quotation.phone || ''}`, { x: marginLeft, y, size: fontSize, font });
-
-    y -= 26;
-    firstPage.drawText('Product / Service:', { x: marginLeft, y, size: fontSize, font });
-    firstPage.drawText(String(quotation.productsOfInterest || ''), { x: marginLeft + 100, y, size: fontSize, font });
-
-    y -= 16;
-    firstPage.drawText('Quantity:', { x: marginLeft, y, size: fontSize, font });
-    firstPage.drawText(String(quotation.quantity || ''), { x: marginLeft + 100, y, size: fontSize, font });
-
-    y -= 26;
-    firstPage.drawText('Additional Details:', { x: marginLeft, y, size: fontSize, font });
-    const details = (quotation.additionalDetails || '').toString();
-    const wrapped = font.splitTextToSize ? font.splitTextToSize(details, 400) : [details];
-    // pdf-lib doesn't provide splitTextToSize on font; fallback to simple drawing
-    firstPage.drawText(details, { x: marginLeft, y: y - 12, size: 10, font });
-
-    const pdfBytes = await pdfDoc.save();
-    fs.writeFileSync(outPath, pdfBytes);
-    return outPath;
-  }
-
-  // If no template, create a fresh PDF
-  const pdfDoc = await PDFDocument.create();
-  const page = pdfDoc.addPage([595.28, 841.89]); // A4 in points
-  const { width, height } = page.getSize();
-  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-
-  page.drawText('ORIONX', { x: 40, y: height - 40, size: 18, font });
-  page.drawText('Panagoda, Colombo, Sri Lanka', { x: 40, y: height - 56, size: 10, font });
-  page.drawText(`Email: orionx2101@gmail.com | Phone: +94 756498525`, { x: 40, y: height - 70, size: 10, font });
-
-  let y = height - 110;
-  page.drawText(`Quotation Date: ${new Date().toLocaleDateString()}`, { x: 420, y, size: 10, font });
-
-  page.drawText('Customer Details:', { x: 40, y: y - 24, size: 11, font });
-  page.drawText(`${quotation.firstName || ''} ${quotation.lastName || ''}`, { x: 40, y: y - 40, size: 10, font });
-  page.drawText(`${quotation.company || ''}`, { x: 40, y: y - 56, size: 10, font });
-  page.drawText(`${quotation.email || ''} • ${quotation.phone || ''}`, { x: 40, y: y - 72, size: 10, font });
-
-  page.drawText('Product / Service:', { x: 40, y: y - 100, size: 11, font });
-  page.drawText(String(quotation.productsOfInterest || ''), { x: 160, y: y - 100, size: 10, font });
-  page.drawText('Quantity:', { x: 40, y: y - 116, size: 11, font });
-  page.drawText(String(quotation.quantity || ''), { x: 160, y: y - 116, size: 10, font });
-
-  page.drawText('Additional Details:', { x: 40, y: y - 140, size: 11, font });
-  page.drawText((quotation.additionalDetails || '').toString(), { x: 40, y: y - 156, size: 10, font, maxWidth: 500 });
-
-  const pdfBytes = await pdfDoc.save();
+  const pdfBytes = buildMinimalPdf(quotation);
   fs.writeFileSync(outPath, pdfBytes);
   return outPath;
 };

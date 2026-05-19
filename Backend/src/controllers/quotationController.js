@@ -1,6 +1,16 @@
 import Quotation from '../models/Quotation.js';
 import { sendQuotationConfirmation } from '../config/mailer.js';
 import { generateQuotationPdf } from '../utils/pdfGenerator.js';
+import {
+  createLocalQuotation,
+  listLocalQuotations,
+  getLocalQuotationById,
+  updateLocalQuotationStatus,
+  deleteLocalQuotation,
+} from '../utils/localQuotationStore.js';
+import mongoose from 'mongoose';
+
+const useMongo = () => mongoose.connection.readyState === 1;
 
 export const createQuotation = async (req, res) => {
   try {
@@ -12,7 +22,7 @@ export const createQuotation = async (req, res) => {
     }
 
     // Create quotation
-    const quotation = new Quotation({
+    const quotationPayload = {
       firstName,
       lastName,
       email,
@@ -21,9 +31,11 @@ export const createQuotation = async (req, res) => {
       productsOfInterest,
       quantity,
       additionalDetails,
-    });
+    };
 
-    await quotation.save();
+    const quotation = useMongo()
+      ? await new Quotation(quotationPayload).save()
+      : await createLocalQuotation(quotationPayload);
 
     // Send confirmation email to customer
     try {
@@ -53,18 +65,23 @@ export const createQuotation = async (req, res) => {
 
 export const listQuotations = async (req, res) => {
   try {
-    const quotations = await Quotation.find().sort({ createdAt: -1 });
+    const quotations = useMongo()
+      ? await Quotation.find().sort({ createdAt: -1 })
+      : await listLocalQuotations();
     res.json(quotations);
   } catch (error) {
     console.error('List quotations error:', error);
-    res.status(500).json({ message: 'Failed to fetch quotations' });
+    const quotations = await listLocalQuotations();
+    res.json(quotations);
   }
 };
 
 export const getQuotation = async (req, res) => {
   try {
     const { id } = req.params;
-    const quotation = await Quotation.findById(id);
+    const quotation = useMongo()
+      ? await Quotation.findById(id)
+      : await getLocalQuotationById(id);
 
     if (!quotation) {
       return res.status(404).json({ message: 'Quotation not found' });
@@ -86,11 +103,9 @@ export const updateQuotationStatus = async (req, res) => {
       return res.status(400).json({ message: 'Invalid status' });
     }
 
-    const quotation = await Quotation.findByIdAndUpdate(
-      id,
-      { status },
-      { new: true }
-    );
+    const quotation = useMongo()
+      ? await Quotation.findByIdAndUpdate(id, { status }, { new: true })
+      : await updateLocalQuotationStatus(id, status);
 
     if (!quotation) {
       return res.status(404).json({ message: 'Quotation not found' });
@@ -106,7 +121,9 @@ export const updateQuotationStatus = async (req, res) => {
 export const deleteQuotation = async (req, res) => {
   try {
     const { id } = req.params;
-    const quotation = await Quotation.findByIdAndDelete(id);
+    const quotation = useMongo()
+      ? await Quotation.findByIdAndDelete(id)
+      : await deleteLocalQuotation(id);
 
     if (!quotation) {
       return res.status(404).json({ message: 'Quotation not found' });
