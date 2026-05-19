@@ -11,6 +11,13 @@ import {
   CheckCircleIcon } from
 'lucide-react';
 import { motion } from 'framer-motion';
+import jsPDF from 'jspdf';
+
+const COMPANY_NAME = 'ORIONX';
+const COMPANY_ADDRESS = 'Panagoda, Colombo, Sri Lanka';
+const COMPANY_EMAIL = 'orionx2101@gmail.com';
+const COMPANY_PHONE = '+94 756498525';
+
 export function QuotationPage() {
   const [formData, setFormData] = useState({
     firstName: '',
@@ -47,6 +54,16 @@ export function QuotationPage() {
         throw new Error(errorData.message || 'Failed to submit quotation');
       }
 
+      // capture submitted data for PDF generation
+      const submittedData = { ...formData, quantity: parseInt(formData.quantity) || 1 };
+
+      // generate PDF and trigger download for the user
+      try {
+        generateQuotationPdf(submittedData);
+      } catch (pdfErr) {
+        console.error('PDF generation failed:', pdfErr);
+      }
+
       setIsSubmitting(false);
       setIsSubmitted(true);
       setFormData({
@@ -73,6 +90,60 @@ export function QuotationPage() {
       [e.target.name]: e.target.value
     }));
   };
+  
+  // Generate a simple letterhead-style PDF and trigger download
+  const generateQuotationPdf = (data: any) => {
+    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+
+    // Header / Letterhead
+    doc.setFontSize(18);
+    doc.setTextColor(20, 40, 60);
+    doc.text(COMPANY_NAME, 20, 20);
+    doc.setFontSize(10);
+    doc.text(COMPANY_ADDRESS, 20, 26);
+    doc.text(`Email: ${COMPANY_EMAIL} | Phone: ${COMPANY_PHONE}`, 20, 31);
+
+    // Title
+    doc.setFontSize(14);
+    doc.text('Quotation', 150, 20, { align: 'right' });
+    doc.setFontSize(10);
+    const now = new Date();
+    doc.text(`Date: ${now.toLocaleDateString()}`, 150, 26, { align: 'right' });
+
+    // Customer info
+    doc.setFontSize(11);
+    doc.text('Customer Details:', 20, 45);
+    doc.setFontSize(10);
+    doc.text(`${data.firstName || ''} ${data.lastName || ''}`, 20, 52);
+    doc.text(`${data.company || ''}`, 20, 58);
+    doc.text(`${data.email || ''} • ${data.phone || ''}`, 20, 64);
+
+    // Quotation details box
+    doc.setDrawColor(200);
+    doc.rect(20, 72, 170, 40);
+    doc.setFontSize(11);
+    doc.text('Product / Service', 24, 80);
+    doc.text('Quantity', 120, 80);
+    doc.setFontSize(10);
+    doc.text(String(data.productsOfInterest || ''), 24, 90);
+    doc.text(String(data.quantity || ''), 120, 90);
+
+    // Additional details
+    doc.setFontSize(11);
+    doc.text('Additional Details:', 20, 122);
+    doc.setFontSize(10);
+    const splitDetails = doc.splitTextToSize(data.additionalDetails || '', 170);
+    doc.text(splitDetails, 20, 130);
+
+    // Footer / signature
+    doc.setFontSize(10);
+    doc.text('Thank you for your interest. This is an initial quotation request.', 20, 270);
+    doc.text('ORIONX Sales Team', 20, 277);
+
+    const filename = `Quotation_${(data.firstName || 'customer')}_${now.getFullYear()}${(now.getMonth()+1).toString().padStart(2,'0')}${now.getDate().toString().padStart(2,'0')}.pdf`;
+    doc.save(filename);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
