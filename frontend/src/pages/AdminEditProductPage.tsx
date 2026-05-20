@@ -248,6 +248,16 @@ export function AdminEditProductPage() {
               />
               <span className="ml-2 text-sm">Pre-order</span>
             </label>
+          
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                name="isHotDeal"
+                checked={!!formData.isHotDeal}
+                onChange={handleChange}
+              />
+              <span className="ml-2 text-sm">Hot Deal</span>
+            </label>
           </div>
 
           <div>

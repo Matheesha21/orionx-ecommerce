@@ -2,15 +2,35 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRightIcon, ClockIcon } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { getOnSaleProducts } from '../../data/products';
 import { ProductCard } from '../ui/ProductCard';
+import { productsApi } from '../../services/productService';
 export function DealsSection() {
   const [timeLeft, setTimeLeft] = useState({
     hours: 23,
     minutes: 59,
     seconds: 59
   });
-  const dealProducts = getOnSaleProducts().slice(0, 4);
+  const [dealProducts, setDealProducts] = useState<any[]>([]);
+  const [loadingDeals, setLoadingDeals] = useState(true);
+
+  useEffect(() => {
+    const fetch = async () => {
+      try {
+        setLoadingDeals(true);
+        const res = await productsApi.getAll({ hotDeal: true, limit: 4 });
+        if (res && Array.isArray(res.data)) {
+          setDealProducts(res.data.map((p: any) => ({ ...p, id: p.id || p._id })));
+        }
+      } catch (err) {
+        console.error('Failed to fetch hot deals:', err);
+        setDealProducts([]);
+      } finally {
+        setLoadingDeals(false);
+      }
+    };
+
+    fetch();
+  }, []);
   useEffect(() => {
     const timer = setInterval(() => {
       setTimeLeft((prev) => {
@@ -105,8 +125,14 @@ export function DealsSection() {
 
         {/* Products Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {dealProducts.map((product, index) =>
-          <ProductCard key={product.id} product={product} index={index} />
+          {loadingDeals ? (
+            <div className="text-text-secondary">Loading deals...</div>
+          ) : dealProducts.length === 0 ? (
+            <div className="text-text-secondary">No deals right now.</div>
+          ) : (
+            dealProducts.map((product, index) => (
+              <ProductCard key={product._id || product.id} product={product} index={index} />
+            ))
           )}
         </div>
 
