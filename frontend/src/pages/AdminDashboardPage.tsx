@@ -12,6 +12,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { useAuth } from "../context/AuthContext";
 import { products } from "../data/products";
+import { productsApi } from "../services/productService";
 import { ordersApi } from "../services/orderService";
 
 interface AdminOrder {
@@ -32,6 +33,9 @@ export function AdminDashboardPage() {
   const { isAdmin, isAuthenticated } = useAuth();
 
   const [orders, setOrders] = useState<AdminOrder[]>([]);
+  const [totalProducts, setTotalProducts] = useState<number>(products.length);
+  const [loadingProducts, setLoadingProducts] = useState<boolean>(true);
+  const [productsError, setProductsError] = useState<string>("");
   const [loadingOrders, setLoadingOrders] = useState(true);
   const [ordersError, setOrdersError] = useState("");
   const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -171,10 +175,29 @@ export function AdminDashboardPage() {
   useEffect(() => {
     if (isAuthenticated && isAdmin) {
       fetchOrders();
+      fetchProductsCount();
     } else {
       setLoadingOrders(false);
     }
   }, [isAuthenticated, isAdmin]);
+
+  const fetchProductsCount = async () => {
+    try {
+      setLoadingProducts(true);
+      setProductsError("");
+
+      const resp = await productsApi.getAll({ page: 1, limit: 1 });
+      // backend returns { data, total, page, ... }
+      if (resp && typeof resp.total === "number") {
+        setTotalProducts(resp.total);
+      }
+    } catch (error: any) {
+      console.error("Fetch products count error:", error.response?.data || error.message);
+      setProductsError("Failed to load products");
+    } finally {
+      setLoadingProducts(false);
+    }
+  };
 
   if (!isAuthenticated || !isAdmin) {
     return <Navigate to="/" replace />;
@@ -209,9 +232,9 @@ export function AdminDashboardPage() {
     },
     {
       label: "Total Products",
-      value: products.length.toString(),
+      value: (loadingProducts ? "Loading..." : totalProducts.toString()),
       icon: PackageIcon,
-      trend: "+0",
+      trend: productsError ? "Error" : "+0",
       color: "text-purple-400",
       bg: "bg-purple-400/10",
     },
