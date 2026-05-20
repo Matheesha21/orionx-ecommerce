@@ -23,18 +23,20 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
 
   const fetchWishlist = async () => {
     try {
+      setLoading(true);
       const token = localStorage.getItem("token");
       if (!token) {
         setItems([]);
         return;
       }
 
-      const data = await userApi.getWishlist(token);
+      const response = await userApi.getWishlist(token);
+      const wishlistItems = response.wishlist || [];
 
-      const mapped = (data || []).map((item: any) => ({
+      const mapped = wishlistItems.map((item: any) => ({
         product: {
-          ...item.product,
-          id: item.product._id,
+          ...item,
+          id: item.id || item._id,
         },
         addedAt: item.addedAt,
       }));

@@ -27,6 +27,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const fetchCart = async () => {
     try {
+      setLoading(true);
       const token = localStorage.getItem("token");
 
       if (!token) {
@@ -35,8 +36,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       }
 
       const response = await userApi.getCart(token);
+      const cartItems = response.cart || [];
 
-      const mappedItems = (response.cart || [])
+      const mappedItems = cartItems
         .filter((item: any) => item.product)
         .map((item: any) => ({
           product: {

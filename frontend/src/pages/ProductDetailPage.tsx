@@ -292,10 +292,13 @@ export function ProductDetailPage() {
               <button
                 onClick={handleAddToWishlist}
                 disabled={addingToWishlist}
-                className="p-3 border rounded disabled:opacity-50"
+                className="p-3 border rounded disabled:opacity-50 flex items-center gap-2"
                 title="Add to Wishlist"
               >
                 <HeartIcon size={18} />
+                <span className="text-sm font-medium">
+                  {addingToWishlist ? "Adding..." : "Favorite"}
+                </span>
               </button>
 
               <button
