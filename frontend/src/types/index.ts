@@ -182,6 +182,19 @@ export interface ContactFormData {
   message: string;
 }
 
+export interface ContactMessage {
+  id: string;
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+  status: 'new' | 'read' | 'replied' | 'closed';
+  adminNotes?: string;
+  repliedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface QuotationRequest {
   firstName: string;
   lastName: string;

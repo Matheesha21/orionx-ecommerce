@@ -113,3 +113,56 @@ export const sendQuotationConfirmation = async (email, firstName, product, quant
 
   return transporter.sendMail(mailOptions);
 };
+
+export const sendContactNotification = async (contactMessage) => {
+  const transporter = buildMailer();
+  const adminEmail = process.env.ADMIN_EMAIL || process.env.SMTP_FROM;
+
+  if (!adminEmail) {
+    throw new Error("Admin email not configured.");
+  }
+
+  return transporter.sendMail({
+    from: process.env.SMTP_FROM,
+    to: adminEmail,
+    subject: `New Contact Message: ${contactMessage.subject}`,
+    html: `
+      <div style="font-family:Arial,Helvetica,sans-serif;color:#111;">
+        <h2>New Contact Message</h2>
+        <p><strong>Name:</strong> ${contactMessage.name}</p>
+        <p><strong>Email:</strong> ${contactMessage.email}</p>
+        <p><strong>Subject:</strong> ${contactMessage.subject}</p>
+        <p><strong>Message:</strong></p>
+        <div style="background:#f5f5f5;padding:15px;border-radius:6px;white-space:pre-wrap;">${contactMessage.message}</div>
+      </div>
+    `,
+  });
+};
+
+export const sendContactReply = async (contactMessage, replyMessage) => {
+  const transporter = buildMailer();
+
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+
+  return transporter.sendMail({
+    from: process.env.SMTP_FROM,
+    to: contactMessage.email,
+    subject: `Re: ${contactMessage.subject} - ORIONX`,
+    html: `
+      <div style="font-family:Arial,Helvetica,sans-serif;color:#111;line-height:1.6;">
+        <h2>Reply from ORIONX</h2>
+        <p>Hi ${contactMessage.name},</p>
+        <p>Thanks for reaching out to ORIONX. Here is our reply to your message:</p>
+        <div style="background:#f5f5f5;padding:15px;border-radius:6px;white-space:pre-wrap;margin:16px 0;">
+          ${replyMessage}
+        </div>
+        <p>If you need anything else, you can reply to this email or contact us again from our website.</p>
+        <p>Best regards,<br/>ORIONX Support Team</p>
+        <p style="font-size:12px;color:#666;margin-top:24px;">
+          ORIONX<br/>
+          <a href="${frontendUrl}">Visit our store</a>
+        </p>
+      </div>
+    `,
+  });
+};

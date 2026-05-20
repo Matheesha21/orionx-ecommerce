@@ -1,4 +1,3 @@
-import axios from 'axios';
 import React, { useState } from 'react';
 import {
   MailIcon,
@@ -8,6 +7,7 @@ import {
   MessageSquareIcon,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { contactApi } from '../services/api';
 
 export function ContactPage() {
   const [formData, setFormData] = useState({
@@ -26,7 +26,7 @@ export function ContactPage() {
     setError('');
 
     try {
-      await axios.post('http://127.0.0.1:5050/api/contact', formData);
+      await contactApi.submit(formData);
       setIsSubmitted(true);
       setFormData({ name: '', email: '', subject: '', message: '' });
     } catch (err: any) {

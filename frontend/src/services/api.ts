@@ -25,6 +25,7 @@ import {
   RegisterRequest,
   ProductFilters,
   ContactFormData,
+  ContactMessage,
   QuotationRequest,
   OrderRequest } from
 '../types';
@@ -191,7 +192,35 @@ export const contactApi = {
   request('/contact', {
     method: 'POST',
     body: JSON.stringify(data)
-  })
+  }),
+
+  getAll: (status?: string): Promise<ApiResponse<ContactMessage[]>> => {
+    const query = status && status !== 'all' ? `?status=${encodeURIComponent(status)}` : '';
+    return request(`/contact${query}`);
+  },
+
+  update: (
+    id: string,
+    data: { status?: ContactMessage['status']; adminNotes?: string }
+  ): Promise<ApiResponse<ContactMessage>> =>
+    request(`/contact/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data)
+    }),
+
+  reply: (
+    id: string,
+    data: { replyMessage: string; adminNotes?: string }
+  ): Promise<ApiResponse<ContactMessage>> =>
+    request(`/contact/${id}/reply`, {
+      method: 'POST',
+      body: JSON.stringify(data)
+    }),
+
+  delete: (id: string): Promise<ApiResponse<{message: string}>> =>
+    request(`/contact/${id}`, {
+      method: 'DELETE'
+    })
 };
 
 // ─── Quotation API ───────────────────────────────────────────

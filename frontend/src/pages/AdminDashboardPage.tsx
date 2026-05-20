@@ -278,6 +278,13 @@ export function AdminDashboardPage() {
               Quotations
             </Link>
 
+            <Link
+              to="/admin/messages"
+              className="px-4 py-2 bg-surface border border-border hover:bg-surface-elevated text-text-primary font-semibold rounded-lg transition-colors"
+            >
+              Messages
+            </Link>
+
             <button
               onClick={handleGenerateReport}
               disabled={reportLoading}
