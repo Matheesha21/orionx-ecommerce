@@ -19,6 +19,7 @@ export function AdminAddProductPage() {
     stockCount: "",
     isFeatured: false,
     isOnSale: false,
+    isPreOrder: false,
     discountPercentage: "",
     tags: "",
   });
@@ -124,6 +125,7 @@ export function AdminAddProductPage() {
         stockCount: Number(formData.stockCount),
         isFeatured: formData.isFeatured,
         isOnSale: formData.isOnSale,
+        isPreOrder: formData.isPreOrder,
         discountPercentage: Number(formData.discountPercentage || 0),
         tags: formData.tags
           .split(",")
@@ -353,6 +355,16 @@ export function AdminAddProductPage() {
                 onChange={handleChange}
               />
               On Sale
+            </label>
+
+            <label className="flex items-center gap-2 text-text-primary">
+              <input
+                type="checkbox"
+                name="isPreOrder"
+                checked={formData.isPreOrder}
+                onChange={handleChange}
+              />
+              Pre-order
             </label>
           </div>
 

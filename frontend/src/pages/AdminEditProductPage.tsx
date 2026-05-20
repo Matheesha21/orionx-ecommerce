@@ -47,11 +47,12 @@ export function AdminEditProductPage() {
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
-    const { name, value } = e.target;
+    const target = e.target as HTMLInputElement;
+    const { name, value, type, checked } = target;
 
     setFormData((prev: any) => ({
       ...prev,
-      [name]: value,
+      [name]: type === "checkbox" ? checked : value,
     }));
   };
 
@@ -215,6 +216,38 @@ export function AdminEditProductPage() {
               onChange={handleChange}
               className="w-full p-3 border rounded bg-background"
             />
+          </div>
+
+          <div className="flex gap-4 items-center">
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                name="isFeatured"
+                checked={!!formData.isFeatured}
+                onChange={handleChange}
+              />
+              <span className="ml-2 text-sm">Featured</span>
+            </label>
+
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                name="isOnSale"
+                checked={!!formData.isOnSale}
+                onChange={handleChange}
+              />
+              <span className="ml-2 text-sm">On Sale</span>
+            </label>
+
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                name="isPreOrder"
+                checked={!!formData.isPreOrder}
+                onChange={handleChange}
+              />
+              <span className="ml-2 text-sm">Pre-order</span>
+            </label>
           </div>
 
           <div>

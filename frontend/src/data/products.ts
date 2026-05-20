@@ -107,6 +107,124 @@ export const products: Product[] = [
   createdAt: '2024-01-20T10:00:00Z'
 },
 {
+  id: 'macbook-air-13-m2',
+  name: 'MacBook Air 13" M2',
+  slug: 'macbook-air-13-m2',
+  category: 'laptops',
+  subcategory: 'Ultrabook',
+  brand: 'Apple',
+  price: 999,
+  description: 'Thin and light MacBook Air with the Apple M2 chip, silent fanless design, and excellent battery life.',
+  shortDescription: 'Thin and light with M2 chip',
+  specs: {
+    Processor: 'Apple M2',
+    Graphics: '8-core GPU',
+    Memory: '8GB Unified Memory',
+    Storage: '256GB SSD',
+    Display: '13.6" Retina',
+    Battery: 'Up to 18 hours',
+    Weight: '1.24 kg',
+    OS: 'macOS'
+  },
+  images: ['https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=800'],
+  rating: 4.7,
+  reviewCount: 342,
+  inStock: true,
+  stockCount: 20,
+  isFeatured: true,
+  isPreOrder: true,
+  isOnSale: false,
+  tags: ['apple', 'm2', 'macbook air'],
+  createdAt: '2024-03-01T10:00:00Z'
+},
+{
+  id: 'iphone-15-pro',
+  name: 'iPhone 15 Pro',
+  slug: 'iphone-15-pro',
+  category: 'phones',
+  subcategory: 'Smartphone',
+  brand: 'Apple',
+  price: 1199,
+  description: 'The iPhone 15 Pro with A17 chip, titanium frame, and advanced camera system.',
+  shortDescription: 'A17 chip, pro camera system',
+  specs: {
+    Processor: 'Apple A17',
+    Camera: '48MP main',
+    Memory: '8GB',
+    Storage: '256GB',
+    Display: '6.1" OLED',
+    Battery: 'All-day battery',
+    OS: 'iOS'
+  },
+  images: ['https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=800'],
+  rating: 4.9,
+  reviewCount: 410,
+  inStock: false,
+  stockCount: 0,
+  isFeatured: true,
+  isPreOrder: true,
+  isOnSale: false,
+  tags: ['apple', 'iphone', 'pro'],
+  createdAt: '2024-09-01T10:00:00Z'
+},
+{
+  id: 'ipad-pro-11-m4',
+  name: 'iPad Pro 11" M4',
+  slug: 'ipad-pro-11-m4',
+  category: 'tablets',
+  subcategory: 'Pro',
+  brand: 'Apple',
+  price: 799,
+  description: 'iPad Pro with M4 chip, Liquid Retina display, and pro-level performance for creative work.',
+  shortDescription: 'Powerful tablet with M4 chip',
+  specs: {
+    Processor: 'Apple M4',
+    Display: '11" Liquid Retina',
+    Memory: '8GB',
+    Storage: '128GB',
+    Battery: 'Up to 10 hours',
+    OS: 'iPadOS'
+  },
+  images: ['https://images.unsplash.com/photo-1587825140400-5a3a0f8b6b37?w=800'],
+  rating: 4.8,
+  reviewCount: 198,
+  inStock: true,
+  stockCount: 14,
+  isFeatured: true,
+  isPreOrder: true,
+  isOnSale: false,
+  tags: ['apple', 'ipad', 'pro'],
+  createdAt: '2024-05-01T10:00:00Z'
+},
+{
+  id: 'apple-watch-9',
+  name: 'Apple Watch Series 9',
+  slug: 'apple-watch-series-9',
+  category: 'wearables',
+  subcategory: 'Smartwatch',
+  brand: 'Apple',
+  price: 399,
+  description: 'Apple Watch Series 9 with faster S9 chip, brighter display, and advanced health features.',
+  shortDescription: 'Faster S9 chip, brighter display',
+  specs: {
+    Processor: 'Apple S9',
+    Display: 'Always-On Retina',
+    Storage: '32GB',
+    Battery: 'Up to 18 hours',
+    OS: 'watchOS'
+  },
+  images: ['https://images.unsplash.com/photo-1517433456452-f9633a875f6f?w=800'],
+  rating: 4.7,
+  reviewCount: 540,
+  inStock: true,
+  stockCount: 35,
+  isFeatured: true,
+  isPreOrder: true,
+  isOnSale: false,
+  tags: ['apple', 'watch', 'wearable'],
+  createdAt: '2024-08-01T10:00:00Z'
+},
+{
   id: 'laptop-4',
   name: 'Dell XPS 15',
   slug: 'dell-xps-15',
@@ -1036,7 +1154,8 @@ export const getFeaturedProducts = (): Product[] => {
 };
 
 export const getPreOrderProducts = (): Product[] => {
-  return products.filter((product) => product.isPreOrder);
+  // Show Apple products in the Pre-order section instead of demo items
+  return products.filter((product) => product.brand === 'Apple');
 };
 
 export const getOnSaleProducts = (): Product[] => {

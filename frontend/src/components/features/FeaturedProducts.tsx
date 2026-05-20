@@ -4,8 +4,35 @@ import { ArrowRightIcon } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { getPreOrderProducts } from '../../data/products';
 import { ProductCard } from '../ui/ProductCard';
+import { useEffect, useState } from 'react';
+import { productsApi } from '../../services/productService';
+
 export function FeaturedProducts() {
-  const preOrderProducts = getPreOrderProducts().slice(0, 8);
+  const [preOrderProducts, setPreOrderProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetch = async () => {
+      try {
+        setLoading(true);
+        const res = await productsApi.getAll({ preOrder: true, limit: 8 });
+        if (res && Array.isArray(res.data) && res.data.length > 0) {
+          // normalize backend _id to id for compatibility with ProductCard and other components
+          setPreOrderProducts(res.data.map((p: any) => ({ ...p, id: p.id || p._id })));
+          return;
+        }
+      } catch (err) {
+        // ignore and fallback to local data
+      } finally {
+        setLoading(false);
+      }
+      // fallback to local static Apple products
+      setPreOrderProducts(getPreOrderProducts().slice(0, 8));
+    };
+
+    fetch();
+  }, []);
+
   return (
     <section className="py-16 md:py-24">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -46,9 +73,9 @@ export function FeaturedProducts() {
 
         {/* Products Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {preOrderProducts.map((product, index) =>
-          <ProductCard key={product.id} product={product} index={index} />
-          )}
+          {preOrderProducts.map((product, index) => (
+            <ProductCard key={product._id || product.id} product={product} index={index} />
+          ))}
         </div>
       </div>
     </section>);

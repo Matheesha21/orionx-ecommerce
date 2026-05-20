@@ -11,6 +11,7 @@ export const getProducts = async (req, res) => {
       maxPrice,
       inStock,
       featured,
+      preOrder,
       onSale,
       sort,
       page = 1,
@@ -31,6 +32,7 @@ export const getProducts = async (req, res) => {
 
     if (inStock === "true") filters.stockCount = { $gt: 0 };
     if (featured === "true") filters.isFeatured = true;
+    if (preOrder === "true") filters.isPreOrder = true;
     if (onSale === "true") filters.isOnSale = true;
 
     let sortOption = { createdAt: -1 };

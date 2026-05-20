@@ -105,6 +105,10 @@ const productSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    isPreOrder: {
+      type: Boolean,
+      default: false,
+    },
     isOnSale: {
       type: Boolean,
       default: false,
