@@ -243,6 +243,54 @@ export const getProfile = async (req, res) => {
   }
 };
 
+// @desc    Update current user profile
+export const updateProfile = async (req, res) => {
+  try {
+    const { username } = req.body;
+    const nextUsername = username?.trim();
+
+    if (!nextUsername) {
+      return res.status(400).json({ message: "Username is required" });
+    }
+
+    const existingUser = await User.findOne({
+      username: nextUsername,
+      _id: { $ne: req.user._id },
+    });
+
+    if (existingUser) {
+      return res.status(400).json({ message: "Username already in use" });
+    }
+
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    user.username = nextUsername;
+    await user.save();
+
+    res.json({
+      message: "Profile updated successfully",
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        authType: user.authType,
+        isEmailVerified: user.isEmailVerified,
+        isAdmin: user.isAdmin,
+      },
+    });
+  } catch (error) {
+    if (error?.code === 11000) {
+      return res.status(400).json({ message: "Username already in use" });
+    }
+
+    res.status(500).json({ message: error.message });
+  }
+};
+
 // @desc    Google login/signup
 export const googleLogin = async (req, res) => {
   try {

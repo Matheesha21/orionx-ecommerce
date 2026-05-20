@@ -13,6 +13,7 @@ import {
 import { useAuth } from "../context/AuthContext";
 import { Breadcrumb } from "../components/ui/Breadcrumb";
 import { ordersApi } from "../services/orderService";
+import { userApi } from "../services/userService";
 import type { Address } from "../types";
 
 interface Order {
@@ -82,6 +83,7 @@ export function ProfilePage() {
   const [initialName, setInitialName] = useState("");
   const [activeSection, setActiveSection] = useState<ProfileSection>("profile");
   const [accountNote, setAccountNote] = useState("");
+  const [accountError, setAccountError] = useState("");
   const [accountSaving, setAccountSaving] = useState(false);
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [savedAddresses, setSavedAddresses] = useState<Address[]>([]);
@@ -199,19 +201,39 @@ export function ProfilePage() {
 
   const isNameChanged = fullName.trim() !== initialName.trim();
 
-  const saveProfile = () => {
+  const saveProfile = async () => {
     const nextName = fullName.trim();
 
     if (!nextName) {
       return;
     }
 
-    setAccountSaving(true);
-    updateUser({ name: nextName });
-    setInitialName(nextName);
-    setAccountNote("Profile updated.");
-    setTimeout(() => setAccountNote(""), 2500);
-    setAccountSaving(false);
+    try {
+      setAccountSaving(true);
+      setAccountError("");
+      setAccountNote("");
+
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        setAccountError("Please login first.");
+        return;
+      }
+
+      const response = await userApi.updateProfile(nextName, token);
+      const updatedName = response.user?.username || nextName;
+
+      updateUser({ name: updatedName });
+      setFullName(updatedName);
+      setInitialName(updatedName);
+      setAccountNote("Profile updated.");
+      setTimeout(() => setAccountNote(""), 2500);
+    } catch (error: any) {
+      console.error("Failed to save profile:", error.response?.data || error.message);
+      setAccountError(error.response?.data?.message || "Failed to save profile");
+    } finally {
+      setAccountSaving(false);
+    }
   };
 
   const saveAddress = () => {
@@ -446,6 +468,14 @@ export function ProfilePage() {
 
                   {accountNote ? (
                     <p className="text-sm text-green-400">{accountNote}</p>
+                  ) : null}
+
+                  {accountError ? (
+                    <p className="text-sm text-red-400">{accountError}</p>
+                  ) : null}
+
+                  {accountError ? (
+                    <p className="text-sm text-red-400">{accountError}</p>
                   ) : null}
                 </form>
               ) : null}

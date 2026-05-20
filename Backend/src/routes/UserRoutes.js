@@ -6,6 +6,7 @@ import {
   loginUser,
   googleLogin,
   getProfile,
+  updateProfile,
   requestEmailOtp,
   verifyEmailOtp,
   addToCart,
@@ -24,6 +25,7 @@ router.post("/register", registerUser);
 router.post("/login", loginUser);
 router.post("/google-login", googleLogin);
 router.get("/profile", protect, getProfile);
+router.put("/profile", protect, updateProfile);
 
 // Cart
 router.post("/cart", protect, addToCart);

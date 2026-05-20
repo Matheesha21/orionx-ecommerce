@@ -51,6 +51,20 @@ export const userApi = {
     return response.data;
   },
 
+  updateProfile: async (username: string, token: string) => {
+    const response = await axios.put(
+      `${API_BASE_URL}/users/profile`,
+      { username },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    return response.data;
+  },
+
   addToWishlist: async (productId: string, token: string) => {
     const response = await axios.post(
       `${API_BASE_URL}/users/wishlist`,
