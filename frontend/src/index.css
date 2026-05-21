@@ -9,52 +9,81 @@
 /* END TAILWIND IMPORTS — ALL OTHER CSS MUST GO BELOW THIS LINE */
 
 :root {
-  --color-background: #F8F9FA;
-  --color-background-secondary: #FFFFFF;
-  --color-surface: #FFFFFF;
-  --color-surface-elevated: #F1F3F5;
-  --color-primary: #007BFF;
-  --color-primary-light: #339DFF;
-  --color-secondary: #0A2540;
-  --color-accent: #0A2540;
+  --color-background: 248 249 250;
+  --color-background-secondary: 255 255 255;
+  --color-surface: 255 255 255;
+  --color-surface-elevated: 241 243 245;
+  --color-border: 222 226 230;
+  --color-border-hover: 173 181 189;
+  --color-primary: 0 123 255;
+  --color-primary-light: 51 157 255;
+  --color-primary-dark: 0 86 179;
+  --color-secondary: 10 37 64;
+  --color-accent: 10 37 64;
+  --color-success: 40 167 69;
+  --color-warning: 255 193 7;
+  --color-danger: 220 53 69;
+  --color-text-primary: 10 37 64;
+  --color-text-secondary: 73 80 87;
+  --color-text-muted: 108 117 125;
+}
+
+:root[data-theme='dark'] {
+  --color-background: 15 23 42;
+  --color-background-secondary: 17 24 39;
+  --color-surface: 30 41 59;
+  --color-surface-elevated: 51 65 85;
+  --color-border: 71 85 105;
+  --color-border-hover: 100 116 139;
+  --color-primary: 96 165 250;
+  --color-primary-light: 125 211 252;
+  --color-primary-dark: 59 130 246;
+  --color-secondary: 226 232 240;
+  --color-accent: 125 211 252;
+  --color-success: 74 222 128;
+  --color-warning: 250 204 21;
+  --color-danger: 248 113 113;
+  --color-text-primary: 248 250 252;
+  --color-text-secondary: 203 213 225;
+  --color-text-muted: 148 163 184;
 }
 * {
   scrollbar-width: thin;
-  scrollbar-color: #CED4DA #F1F3F5;
+  scrollbar-color: rgb(var(--color-border)) rgb(var(--color-surface-elevated));
 }
 *::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 *::-webkit-scrollbar-track {
-  background: #F1F3F5;
+  background: rgb(var(--color-surface-elevated));
 }
 *::-webkit-scrollbar-thumb {
-  background: #CED4DA;
+  background: rgb(var(--color-border));
   border-radius: 4px;
 }
 *::-webkit-scrollbar-thumb:hover {
-  background: #ADB5BD;
+  background: rgb(var(--color-border-hover));
 }
 html {
   scroll-behavior: smooth;
 }
 body {
   font-family: 'Inter', system-ui, sans-serif;
-  background-color: #F8F9FA;
-  color: #0A2540;
+  background-color: rgb(var(--color-background));
+  color: rgb(var(--color-text-primary));
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 /* Focus styles */
 *:focus-visible {
-  outline: 2px solid #007BFF;
+  outline: 2px solid rgb(var(--color-primary));
   outline-offset: 2px;
 }
 /* Selection styles */
 ::selection {
-  background-color: rgba(0, 123, 255, 0.15);
-  color: #0A2540;
+  background-color: rgba(0, 123, 255, 0.18);
+  color: rgb(var(--color-text-primary));
 }
 /* Subtle grid background pattern */
 .grid-pattern {
@@ -65,7 +94,7 @@ body {
 }
 /* Gradient text */
 .gradient-text {
-  background: linear-gradient(135deg, #007BFF 0%, #0A2540 100%);
+  background: linear-gradient(135deg, rgb(var(--color-primary)) 0%, rgb(var(--color-secondary)) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -82,9 +111,9 @@ body {
 .shimmer {
   background: linear-gradient(
     90deg,
-    #F1F3F5 0%,
-    #E9ECEF 50%,
-    #F1F3F5 100%
+    rgb(var(--color-surface-elevated)) 0%,
+    rgb(var(--color-background-secondary)) 50%,
+    rgb(var(--color-surface-elevated)) 100%
   );
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;

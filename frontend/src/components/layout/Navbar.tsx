@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
   ShoppingCartIcon,
@@ -7,9 +7,12 @@ import {
   MenuIcon,
   XIcon,
   ChevronDownIcon,
+  SunIcon,
+  MoonIcon,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
+import { useTheme } from "../../context/ThemeContext";
 import { SearchBar } from "../ui/SearchBar";
 import { userApi } from "../../services/userService";
 
@@ -32,6 +35,7 @@ export function Navbar() {
 
   const location = useLocation();
   const { user, isAuthenticated, isAdmin } = useAuth();
+  const { isDark, toggleTheme } = useTheme();
   const userInitial = (user?.name || "").trim().charAt(0).toUpperCase();
 
   const fetchCounts = async () => {
@@ -80,7 +84,7 @@ export function Navbar() {
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         isScrolled
-          ? "bg-white/95 backdrop-blur-lg border-b border-border shadow-soft"
+          ? "bg-surface/95 backdrop-blur-lg border-b border-border shadow-soft"
           : "bg-transparent"
       }`}
     >
@@ -111,6 +115,19 @@ export function Navbar() {
           </div>
 
           <div className="flex items-center gap-2 md:gap-4">
+            <button
+              onClick={toggleTheme}
+              className="p-2 text-text-secondary hover:text-text-primary transition-colors"
+              aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+              title={isDark ? 'Light mode' : 'Dark mode'}
+            >
+              {isDark ? (
+                <SunIcon className="w-5 h-5 md:w-6 md:h-6" />
+              ) : (
+                <MoonIcon className="w-5 h-5 md:w-6 md:h-6" />
+              )}
+            </button>
+
             <Link
               to="/wishlist"
               className="relative p-2 text-text-secondary hover:text-text-primary transition-colors"

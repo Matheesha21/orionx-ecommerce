@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
 import { CartProvider } from './context/CartContext';
 import { WishlistProvider } from './context/WishlistContext';
 import { CompareProvider } from './context/CompareContext';
@@ -31,13 +32,14 @@ import { AdminProductsPage } from "./pages/AdminProductsPage";
 import { AdminEditProductPage } from "./pages/AdminEditProductPage";
 export function App() {
   return (
-    <AuthProvider>
-      <CartProvider>
-        <WishlistProvider>
-          <CompareProvider>
-            <Router>
-              <Layout>
-                <Routes>
+    <ThemeProvider>
+      <AuthProvider>
+        <CartProvider>
+          <WishlistProvider>
+            <CompareProvider>
+              <Router>
+                <Layout>
+                  <Routes>
                   <Route path="/" element={<HomePage />} />
                   <Route path="/shop" element={<ShopPage />} />
                   <Route
@@ -63,12 +65,13 @@ export function App() {
                   <Route path="/admin/subscribers" element={<AdminSubscribersPage />} />
                   <Route path="/admin/quotations" element={<AdminQuotationsPage />} />
                   <Route path="/admin/messages" element={<AdminMessagesPage />} />
-                </Routes>
-              </Layout>
-            </Router>
-          </CompareProvider>
-        </WishlistProvider>
-      </CartProvider>
-    </AuthProvider>);
+                  </Routes>
+                </Layout>
+              </Router>
+            </CompareProvider>
+          </WishlistProvider>
+        </CartProvider>
+      </AuthProvider>
+    </ThemeProvider>);
 
 }
