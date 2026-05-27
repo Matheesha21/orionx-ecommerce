@@ -1,8 +1,8 @@
-import ContactMessage from "../models/ContactMessage.js";
+import prisma from "../lib/prisma.js";
 import { sendContactNotification, sendContactReply } from "../config/mailer.js";
 
 const serializeContactMessage = (message) => ({
-  id: message._id.toString(),
+  id: String(message.id),
   name: message.name,
   email: message.email,
   subject: message.subject,
@@ -22,11 +22,13 @@ export const createContactMessage = async (req, res) => {
       return res.status(400).json({ message: "All fields are required" });
     }
 
-    const contactMessage = await ContactMessage.create({
+    const contactMessage = await prisma.contactMessage.create({
+      data: {
       name,
       email,
       subject,
       message,
+      },
     });
 
     try {
@@ -48,13 +50,10 @@ export const createContactMessage = async (req, res) => {
 export const getContactMessages = async (req, res) => {
   try {
     const { status } = req.query;
-    const filters = {};
-
-    if (status && status !== "all") {
-      filters.status = status;
-    }
-
-    const messages = await ContactMessage.find(filters).sort({ createdAt: -1 });
+    const messages = await prisma.contactMessage.findMany({
+      where: status && status !== "all" ? { status } : undefined,
+      orderBy: { createdAt: "desc" },
+    });
 
     res.json({
       success: true,
@@ -67,6 +66,11 @@ export const getContactMessages = async (req, res) => {
 
 export const updateContactMessage = async (req, res) => {
   try {
+    const id = Number.parseInt(req.params.id, 10);
+    if (!Number.isInteger(id)) {
+      return res.status(400).json({ message: "Invalid message id" });
+    }
+
     const { status, adminNotes } = req.body;
     const updates = {};
 
@@ -81,47 +85,55 @@ export const updateContactMessage = async (req, res) => {
       updates.adminNotes = adminNotes;
     }
 
-    const updated = await ContactMessage.findByIdAndUpdate(req.params.id, updates, {
-      new: true,
-      runValidators: true,
+    const updated = await prisma.contactMessage.update({
+      where: { id },
+      data: updates,
     });
-
-    if (!updated) {
-      return res.status(404).json({ message: "Message not found" });
-    }
 
     res.json({
       success: true,
       data: serializeContactMessage(updated),
     });
   } catch (error) {
+    if (error?.code === "P2025") {
+      return res.status(404).json({ message: "Message not found" });
+    }
     res.status(500).json({ message: error.message || "Failed to update message" });
   }
 };
 
 export const deleteContactMessage = async (req, res) => {
   try {
-    const deleted = await ContactMessage.findByIdAndDelete(req.params.id);
-
-    if (!deleted) {
-      return res.status(404).json({ message: "Message not found" });
+    const id = Number.parseInt(req.params.id, 10);
+    if (!Number.isInteger(id)) {
+      return res.status(400).json({ message: "Invalid message id" });
     }
+
+    await prisma.contactMessage.delete({ where: { id } });
 
     res.json({ success: true, message: "Message deleted successfully" });
   } catch (error) {
+    if (error?.code === "P2025") {
+      return res.status(404).json({ message: "Message not found" });
+    }
     res.status(500).json({ message: error.message || "Failed to delete message" });
   }
 };
 
 export const replyToContactMessage = async (req, res) => {
   try {
+    const id = Number.parseInt(req.params.id, 10);
+    if (!Number.isInteger(id)) {
+      return res.status(400).json({ message: "Invalid message id" });
+    }
+
     const { replyMessage, adminNotes } = req.body;
 
     if (!replyMessage || !replyMessage.trim()) {
       return res.status(400).json({ message: "Reply message is required" });
     }
 
-    const contactMessage = await ContactMessage.findById(req.params.id);
+    const contactMessage = await prisma.contactMessage.findUnique({ where: { id } });
 
     if (!contactMessage) {
       return res.status(404).json({ message: "Message not found" });
@@ -129,18 +141,19 @@ export const replyToContactMessage = async (req, res) => {
 
     await sendContactReply(contactMessage, replyMessage.trim());
 
-    contactMessage.status = "replied";
-    contactMessage.repliedAt = new Date();
-    if (typeof adminNotes === "string") {
-      contactMessage.adminNotes = adminNotes;
-    }
-
-    await contactMessage.save();
+    const updatedContactMessage = await prisma.contactMessage.update({
+      where: { id },
+      data: {
+        status: "replied",
+        repliedAt: new Date(),
+        ...(typeof adminNotes === "string" ? { adminNotes } : {}),
+      },
+    });
 
     res.json({
       success: true,
       message: "Reply sent successfully",
-      data: serializeContactMessage(contactMessage),
+      data: serializeContactMessage(updatedContactMessage),
     });
   } catch (error) {
     res.status(500).json({ message: error.message || "Failed to send reply" });

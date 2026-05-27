@@ -1,6 +1,5 @@
 import express from "express";
 import { protect } from "../../middleware/authMiddleware.js";
-import { streamChat } from "../services/chatAgent.js";
 
 const router = express.Router();
 
@@ -25,7 +24,7 @@ router.post("/", protect, async (req, res) => {
     return res.status(400).json({ error: "message is required" });
   }
 
-  const userId = req.user._id.toString();
+  const userId = String(req.user.id);
 
   // Set SSE headers
   res.setHeader("Content-Type", "text/event-stream");
@@ -46,6 +45,7 @@ router.post("/", protect, async (req, res) => {
   };
 
   try {
+    const { streamChat } = await import("../services/chatAgent.js");
     await streamChat(message, {
       userId,
       mode: mode || "faster",

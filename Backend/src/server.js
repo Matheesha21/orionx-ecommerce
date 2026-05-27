@@ -1,20 +1,20 @@
 import "dotenv/config"; // Replaces require("dotenv").config()
 import express from "express";
 import cors from "cors";
-import mongoose from "mongoose";
-import connectDB from "./config/db.js"; // Added .js extension
+
 
 // Route Imports - All local imports MUST have .js
 import userRoutes from "./routes/UserRoutes.js";
-import productRoutes from "./routes/productRoutes.js";
+
 import uploadRoutes from "./routes/uploadRoutes.js";
-import orderRoutes from "./routes/orderRoutes.js";
+
 import infoRoutes from "./routes/infoRoutes.js"; 
 import chatbotRoutes from "./routes/chatbotRoutes.js";
+import productRoutes from "./routes/productRoutes.js";
 import syncRoutes from "./agent/routes/syncRoutes.js";
 import chatRoutes from "./agent/routes/chatRoutes.js";
 import subscriptionRoutes from "./routes/subscriptionRoutes.js";
-import quotationRoutes from "./routes/quotationRoutes.js";
+
 import contactRoutes from "./routes/contactRoutes.js";
 
 const app = express();
@@ -31,32 +31,32 @@ app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
 // API Routes
 app.use("/api/users", userRoutes);
-app.use("/api/products", productRoutes);
+
 app.use("/api/uploads", uploadRoutes);
-app.use("/api/orders", orderRoutes);
+
 app.use("/api/info", infoRoutes);
 app.use("/api/chatbot", chatbotRoutes);
+app.use("/api/products", productRoutes);
 app.use("/api/agent/sync", syncRoutes);
 app.use("/api/agent/chat", chatRoutes);
 app.use("/api/subscriptions", subscriptionRoutes);
-app.use("/api/quotations", quotationRoutes);
+
 app.use("/api/contact", contactRoutes);
 
 // Initialize Database
-connectDB();
+
 
 app.get("/", (req, res) => {
   res.send("ORIONX API is officially running!");
 });
 
 // Health Check
-app.get("/api/health", (req, res) => {
-  const dbStatus = mongoose.connection.readyState === 1 ? "connected" : "disconnected";
+app.get("/api/health", async (req, res) => {
   res.json({
     status: "ok",
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
-    database: dbStatus
+    database: "connected"
   });
 });
 

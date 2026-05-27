@@ -1,9 +1,12 @@
-import Product from "../models/Product.js";
+import prisma from "../lib/prisma.js";
 
 // @desc    Get simplified product list for chatbot context
 export const getChatbotProducts = async (req, res) => {
   try {
-    const products = await Product.find({ inStock: true });
+    const products = await prisma.product.findMany({
+      where: { inStock: true },
+      orderBy: { createdAt: "desc" },
+    });
 
     const formattedProducts = products.map((p) => ({
       name: p.name,

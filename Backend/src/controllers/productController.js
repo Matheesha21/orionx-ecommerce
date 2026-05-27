@@ -1,4 +1,4 @@
-import Product from "../models/Product.js";
+import prisma from "../lib/prisma.js";
 
 // @desc    Get all products with filters, search, and pagination
 export const getProducts = async (req, res) => {
@@ -19,40 +19,46 @@ export const getProducts = async (req, res) => {
       limit = 12,
     } = req.query;
 
-    const filters = {};
+    const where = {};
 
-    if (search) filters.name = { $regex: search, $options: "i" };
-    if (category) filters.category = { $regex: `^${category}$`, $options: "i" };
-    if (brand) filters.brand = { $regex: `^${brand}$`, $options: "i" };
+    if (search) where.name = { contains: search, mode: "insensitive" };
+    if (category) where.category = { equals: category, mode: "insensitive" };
+    if (brand) where.brand = { equals: brand, mode: "insensitive" };
 
     if (minPrice || maxPrice) {
-      filters.price = {};
-      if (minPrice) filters.price.$gte = Number(minPrice);
-      if (maxPrice) filters.price.$lte = Number(maxPrice);
+      where.price = {};
+      if (minPrice) where.price.gte = Number(minPrice);
+      if (maxPrice) where.price.lte = Number(maxPrice);
     }
 
-    if (inStock === "true") filters.stockCount = { $gt: 0 };
-    if (featured === "true") filters.isFeatured = true;
-    if (preOrder === "true") filters.isPreOrder = true;
-    if (onSale === "true") filters.isOnSale = true;
-    if (hotDeal === "true") filters.isHotDeal = true;
+    if (inStock === "true") where.stockCount = { gt: 0 };
+    if (featured === "true") where.isFeatured = true;
+    if (onSale === "true") where.isOnSale = true;
 
-    let sortOption = { createdAt: -1 };
-    if (sort === "price_asc") sortOption = { price: 1 };
-    else if (sort === "price_desc") sortOption = { price: -1 };
-    else if (sort === "name_asc") sortOption = { name: 1 };
-    else if (sort === "name_desc") sortOption = { name: -1 };
-    else if (sort === "newest") sortOption = { createdAt: -1 };
+    // Preserve API compatibility for existing query params even if not modeled yet.
+    void preOrder;
+    void hotDeal;
+
+    let orderBy = { createdAt: "desc" };
+    if (sort === "price_asc") orderBy = { price: "asc" };
+    else if (sort === "price_desc") orderBy = { price: "desc" };
+    else if (sort === "name_asc") orderBy = { name: "asc" };
+    else if (sort === "name_desc") orderBy = { name: "desc" };
+    else if (sort === "newest") orderBy = { createdAt: "desc" };
 
     const pageNumber = Number(page);
     const limitNumber = Number(limit);
     const skip = (pageNumber - 1) * limitNumber;
 
-    const total = await Product.countDocuments(filters);
-    const products = await Product.find(filters)
-      .sort(sortOption)
-      .skip(skip)
-      .limit(limitNumber);
+    const [total, products] = await Promise.all([
+      prisma.product.count({ where }),
+      prisma.product.findMany({
+        where,
+        orderBy,
+        skip,
+        take: limitNumber,
+      }),
+    ]);
 
     res.json({
       data: products,
@@ -69,7 +75,9 @@ export const getProducts = async (req, res) => {
 // @desc    Get single product by slug
 export const getProductBySlug = async (req, res) => {
   try {
-    const product = await Product.findOne({ slug: req.params.slug });
+    const product = await prisma.product.findUnique({
+      where: { slug: req.params.slug },
+    });
 
     if (!product) {
       return res.status(404).json({
@@ -93,8 +101,9 @@ export const getProductBySlug = async (req, res) => {
 // @desc    Create product (Admin)
 export const createProduct = async (req, res) => {
   try {
-    const product = new Product(req.body);
-    const savedProduct = await product.save();
+    const savedProduct = await prisma.product.create({
+      data: req.body,
+    });
 
     res.status(201).json({
       message: "Product created successfully",
@@ -111,18 +120,21 @@ export const createProduct = async (req, res) => {
 // @desc    Update product (Admin)
 export const updateProduct = async (req, res) => {
   try {
-    const updatedProduct = await Product.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { returnDocument: "after", runValidators: true }
-    );
-
-    if (!updatedProduct) {
-      return res.status(404).json({ message: "Product not found" });
+    const id = Number.parseInt(req.params.id, 10);
+    if (!Number.isInteger(id)) {
+      return res.status(400).json({ message: "Invalid product id" });
     }
+
+    const updatedProduct = await prisma.product.update({
+      where: { id },
+      data: req.body,
+    });
 
     res.json(updatedProduct);
   } catch (error) {
+    if (error?.code === "P2025") {
+      return res.status(404).json({ message: "Product not found" });
+    }
     res.status(500).json({ message: error.message });
   }
 };
@@ -130,14 +142,18 @@ export const updateProduct = async (req, res) => {
 // @desc    Delete product (Admin)
 export const deleteProduct = async (req, res) => {
   try {
-    const product = await Product.findByIdAndDelete(req.params.id);
-
-    if (!product) {
-      return res.status(404).json({ message: "Product not found" });
+    const id = Number.parseInt(req.params.id, 10);
+    if (!Number.isInteger(id)) {
+      return res.status(400).json({ message: "Invalid product id" });
     }
+
+    await prisma.product.delete({ where: { id } });
 
     res.json({ message: "Product deleted successfully" });
   } catch (error) {
+    if (error?.code === "P2025") {
+      return res.status(404).json({ message: "Product not found" });
+    }
     res.status(500).json({ message: error.message });
   }
 };
@@ -146,35 +162,57 @@ export const deleteProduct = async (req, res) => {
 export const createProductReview = async (req, res) => {
   try {
     const { rating, comment } = req.body;
+    const productId = Number.parseInt(req.params.id, 10);
+    const userIdRaw = req.user?.id ?? req.user?._id;
+    const userId = Number.parseInt(String(userIdRaw), 10);
 
-    const product = await Product.findById(req.params.id);
+    if (!Number.isInteger(productId)) {
+      return res.status(400).json({ message: "Invalid product id" });
+    }
+
+    if (!Number.isInteger(userId)) {
+      return res.status(401).json({ message: "Invalid user context" });
+    }
+
+    const product = await prisma.product.findUnique({ where: { id: productId } });
 
     if (!product) {
       return res.status(404).json({ message: "Product not found" });
     }
 
-    const alreadyReviewed = product.reviews.find(
-      (review) => review.user.toString() === req.user._id.toString()
-    );
+    const alreadyReviewed = await prisma.review.findFirst({
+      where: {
+        productId,
+        userId,
+      },
+    });
 
     if (alreadyReviewed) {
       return res.status(400).json({ message: "Product already reviewed" });
     }
 
-    const review = {
-      user: req.user._id,
-      name: req.user.name || req.user.username || "Customer",
-      rating: Number(rating),
-      comment,
-    };
+    await prisma.review.create({
+      data: {
+        productId,
+        userId,
+        rating: Number(rating),
+        comment,
+      },
+    });
 
-    product.reviews.push(review);
-    product.reviewCount = product.reviews.length;
-    product.rating =
-      product.reviews.reduce((acc, item) => acc + item.rating, 0) /
-      product.reviews.length;
+    const reviewStats = await prisma.review.aggregate({
+      where: { productId },
+      _avg: { rating: true },
+      _count: { id: true },
+    });
 
-    await product.save();
+    await prisma.product.update({
+      where: { id: productId },
+      data: {
+        rating: reviewStats._avg.rating ?? 0,
+        reviewCount: reviewStats._count.id,
+      },
+    });
 
     res.status(201).json({ message: "Review added successfully" });
   } catch (error) {

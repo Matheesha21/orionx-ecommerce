@@ -1,7 +1,5 @@
 import express from "express";
 import { protect, adminOnly } from "../../middleware/authMiddleware.js";
-import { syncProducts } from "../services/syncProducts.js";
-import { syncDocuments } from "../services/syncDocuments.js";
 
 const router = express.Router();
 
@@ -9,6 +7,7 @@ const router = express.Router();
 // Admin-only: syncs MongoDB products collection into PostgreSQL vector DB
 router.post("/products", protect, adminOnly, async (req, res) => {
   try {
+    const { syncProducts } = await import("../services/syncProducts.js");
     console.log("Product sync started...");
     const summary = await syncProducts();
     console.log("Product sync complete:", summary);
@@ -23,6 +22,7 @@ router.post("/products", protect, adminOnly, async (req, res) => {
 // Admin-only: syncs MongoDB documents collection into PostgreSQL vector DB
 router.post("/documents", protect, adminOnly, async (req, res) => {
   try {
+    const { syncDocuments } = await import("../services/syncDocuments.js");
     console.log("Document sync started...");
     const summary = await syncDocuments();
     console.log("Document sync complete:", summary);
