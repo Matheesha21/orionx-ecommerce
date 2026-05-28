@@ -38,6 +38,13 @@ try {
 			findMany: async () => { throw new Error('Prisma client not initialized'); },
 			delete: async () => { throw new Error('Prisma client not initialized'); },
 		},
+		emailOtp: {
+			create: async () => { throw new Error('Prisma client not initialized'); },
+			findFirst: async () => { throw new Error('Prisma client not initialized'); },
+			findMany: async () => { throw new Error('Prisma client not initialized'); },
+			update: async () => { throw new Error('Prisma client not initialized'); },
+			deleteMany: async () => { throw new Error('Prisma client not initialized'); },
+		},
 		$connect: async () => {},
 		$disconnect: async () => {},
 	};

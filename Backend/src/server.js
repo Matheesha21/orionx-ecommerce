@@ -21,7 +21,27 @@ const app = express();
 
 // Middleware
 app.use(cors({
-  origin: "http://localhost:5173",
+  origin: (origin, callback) => {
+    const allowed = [
+      "http://localhost:5173",
+      "http://127.0.0.1:5173",
+      "http://localhost:4173",
+      "http://127.0.0.1:4173",
+    ];
+
+    const isLocalDevOrigin =
+      typeof origin === "string" &&
+      /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
+
+    if (!origin) return callback(null, true);
+
+    if (allowed.indexOf(origin) !== -1 || isLocalDevOrigin) {
+      return callback(null, true);
+    }
+
+    console.error("[CORS] blocked origin:", origin);
+    return callback(new Error("CORS not allowed"));
+  },
   credentials: true,
 }));
 

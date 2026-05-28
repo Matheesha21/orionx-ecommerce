@@ -9,6 +9,9 @@ const buildMailer = () => {
     );
   }
 
+  // Log presence of SMTP settings (do not log secrets)
+  console.log("[mailer] SMTP configured: host=", !!SMTP_HOST, "port=", !!SMTP_PORT, "user=", !!SMTP_USER, "from=", !!SMTP_FROM);
+
   return nodemailer.createTransport({
     host: SMTP_HOST,
     port: Number(SMTP_PORT),
@@ -23,12 +26,20 @@ const buildMailer = () => {
 export const sendOtpEmail = async (email, otp) => {
   const transporter = buildMailer();
 
-  return transporter.sendMail({
-    from: process.env.SMTP_FROM,
-    to: email,
-    subject: "Your ORIONX verification code",
-    text: `Your ORIONX verification code is ${otp}. It expires in 10 minutes.`,
-  });
+  try {
+    const result = await transporter.sendMail({
+      from: process.env.SMTP_FROM,
+      to: email,
+      subject: "Your ORIONX verification code",
+      text: `Your ORIONX verification code is ${otp}. It expires in 10 minutes.`,
+    });
+
+    console.log(`[mailer] OTP email sent to ${email}: messageId=${result.messageId}`);
+    return result;
+  } catch (err) {
+    console.error("[mailer] Failed to send OTP email:", err?.message || err);
+    throw err;
+  }
 };
 
 export const sendNewsletter = async (email, products = [], extras = {}) => {

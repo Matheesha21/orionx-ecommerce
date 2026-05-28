@@ -8,10 +8,14 @@ datasource db {
 
 model User {
   id        Int      @id @default(autoincrement())
-  username  String
-  email     String   @unique
-  password  String
-  isAdmin   Boolean  @default(false)
+  username      String   @unique
+  email         String   @unique
+  password      String
+  isAdmin       Boolean  @default(false)
+  authType      String   @default("EMAIL")
+  isEmailVerified Boolean @default(false)
+  cart          Json?
+  wishlist      Json?
 
   orders    Order[]
   reviews   Review[]
@@ -131,4 +135,18 @@ model Subscriber {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model EmailOtp {
+  id         Int      @id @default(autoincrement())
+  email      String
+  otpHash    String
+  expiresAt  DateTime
+  verifiedAt DateTime?
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([email])
+  @@index([expiresAt])
 }
